@@ -401,6 +401,8 @@
 		[NSThread sleepForTimeInterval:0.1];
 	}
 	
+	[readerLock unlock];
+	
 	for (id<GPUImageInput> currentTarget in targets)
 	{
 		[currentTarget endProcessing];
@@ -411,8 +413,6 @@
 		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
 		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
 	}
-	
-	[readerLock unlock];
 }
 
 @end
