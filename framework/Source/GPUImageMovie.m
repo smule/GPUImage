@@ -8,7 +8,9 @@
     CVOpenGLESTextureCacheRef coreVideoTextureCache;
     AVAssetReader *reader;
     CMTime previousFrameTime;
+	CMTime previousDisplayFrameTime;
     CFAbsoluteTime previousActualFrameTime;
+	CMSampleBufferRef previousSampleBufferRef;
 }
 
 - (void)processAsset;
@@ -90,7 +92,7 @@
 - (void)enableSynchronizedEncodingUsingMovieWriter:(GPUImageMovieWriter *)movieWriter;
 {
     synchronizedMovieWriter = movieWriter;
-    movieWriter.encodingLiveVideo = NO;
+    //movieWriter.encodingLiveVideo = NO;  //mtg: why is this here?
 }
 
 - (void)startProcessing
@@ -103,7 +105,13 @@
     
     previousFrameTime = kCMTimeZero;
     previousActualFrameTime = CFAbsoluteTimeGetCurrent();
-  
+	previousDisplayFrameTime = kCMTimeZero;
+	if (previousSampleBufferRef) {
+		CMSampleBufferInvalidate(previousSampleBufferRef);
+		CFRelease(previousSampleBufferRef);
+		previousSampleBufferRef = NULL;
+	}
+	
     NSDictionary *inputOptions = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
     AVURLAsset *inputAsset = [[AVURLAsset alloc] initWithURL:self.url options:inputOptions];    
     [inputAsset loadValuesAsynchronouslyForKeys:[NSArray arrayWithObject:@"tracks"] completionHandler: ^{
@@ -188,32 +196,49 @@
         CMSampleBufferRef sampleBufferRef = [readerVideoTrackOutput copyNextSampleBuffer];
         if (sampleBufferRef) 
         {
-            if (_playAtActualSpeed)
-            {
-                // Do this outside of the video processing queue to not slow that down while waiting
-                CMTime currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBufferRef);
-                CMTime differenceFromLastFrame = CMTimeSubtract(currentSampleTime, previousFrameTime);
-                CFAbsoluteTime currentActualTime = CFAbsoluteTimeGetCurrent();
-                
-                CGFloat frameTimeDifference = CMTimeGetSeconds(differenceFromLastFrame);
-                CGFloat actualTimeDifference = currentActualTime - previousActualFrameTime;
-                
-                if (frameTimeDifference > actualTimeDifference)
-                {
-                    usleep(1000000.0 * (frameTimeDifference - actualTimeDifference));
-                }
-                
-                previousFrameTime = currentSampleTime;
-                previousActualFrameTime = CFAbsoluteTimeGetCurrent();
-            }
-
-            __unsafe_unretained GPUImageMovie *weakSelf = self;
-            runSynchronouslyOnVideoProcessingQueue(^{
-                [weakSelf processMovieFrame:sampleBufferRef];
-            });
-            
-            CMSampleBufferInvalidate(sampleBufferRef);
-            CFRelease(sampleBufferRef);
+			// Do this outside of the video processing queue to not slow that down while waiting
+			CMTime currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBufferRef);
+			CMTime differenceFromLastFrame = CMTimeSubtract(currentSampleTime, previousFrameTime);
+			CFAbsoluteTime currentActualTime = CFAbsoluteTimeGetCurrent();
+			
+			CGFloat frameTimeDifference = CMTimeGetSeconds(differenceFromLastFrame);
+			CGFloat actualTimeDifference = currentActualTime - previousActualFrameTime;
+			
+			CGFloat frameTimeDisplayDifference = CMTimeGetSeconds(CMTimeSubtract(previousFrameTime, previousDisplayFrameTime));
+			
+			//mtg: filter out frames that are displayed too quickly that we'll never realistically display them
+			//mtg: glitch frames always come just barely (160 ns) before the correct frame, filter these out too, what's the magic number though?? 10 usec seems to do it
+			if (previousSampleBufferRef && (CMTIME_IS_INVALID(previousDisplayFrameTime) || (frameTimeDisplayDifference > 0.02 && frameTimeDifference > 1e-5)))
+			{
+				if (_playAtActualSpeed && frameTimeDifference > actualTimeDifference)
+				{
+					usleep(1000000.0 * (frameTimeDifference - actualTimeDifference));
+				}
+				
+				previousDisplayFrameTime = previousFrameTime;
+				previousActualFrameTime = CFAbsoluteTimeGetCurrent();
+				
+				__unsafe_unretained GPUImageMovie *weakSelf = self;
+				runSynchronouslyOnVideoProcessingQueue(^{
+					[weakSelf processMovieFrame:previousSampleBufferRef];
+				});
+				
+				//NSLog(@"displayed frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
+			}
+//			else {
+//				NSLog(@"skipped frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
+//			}
+			
+			if (frameTimeDisplayDifference < 0) {
+				previousDisplayFrameTime = kCMTimeZero;
+			}
+			
+			if (previousSampleBufferRef) {
+				CMSampleBufferInvalidate(previousSampleBufferRef);
+				CFRelease(previousSampleBufferRef);
+			}
+			previousSampleBufferRef = sampleBufferRef;
+			previousFrameTime = currentSampleTime;
         }
         else
         {
@@ -277,7 +302,18 @@
         
         [GPUImageOpenGLESContext useImageProcessingContext];
         CVOpenGLESTextureRef texture = NULL;
-        CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(kCFAllocatorDefault, coreVideoTextureCache, movieFrame, NULL, GL_TEXTURE_2D, GL_RGBA, bufferWidth, bufferHeight, GL_BGRA, GL_UNSIGNED_BYTE, 0, &texture);
+        CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
+																	coreVideoTextureCache,
+																	movieFrame,
+																	NULL,
+																	GL_TEXTURE_2D,
+																	GL_RGBA,
+																	bufferWidth,
+																	bufferHeight,
+																	GL_RGBA,  //GL_BRGA  since we're reading the pixels directly...
+																	GL_UNSIGNED_BYTE,
+																	0,
+																	&texture);
         
         if (!texture || err) {
             NSLog(@"Movie CVOpenGLESTextureCacheCreateTextureFromImage failed (error: %d)", err);  
@@ -340,16 +376,25 @@
 
 - (void)endProcessing;
 {
-    for (id<GPUImageInput> currentTarget in targets)
-    {
-        [currentTarget endProcessing];
-    }
-    
-    if (synchronizedMovieWriter != nil)
-    {
-        [synchronizedMovieWriter setVideoInputReadyCallback:^{}];
-        [synchronizedMovieWriter setAudioInputReadyCallback:^{}];
-    }
+	if (reader.status == AVAssetReaderStatusReading) {
+		[reader cancelReading];
+	}
+	
+	//block until reading stops!
+	while (reader.status == AVAssetReaderStatusReading) {
+		[NSThread sleepForTimeInterval:0.1];
+	}
+	
+	for (id<GPUImageInput> currentTarget in targets)
+	{
+		[currentTarget endProcessing];
+	}
+	
+	if (synchronizedMovieWriter != nil)
+	{
+		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
+		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
+	}	
 }
 
 @end

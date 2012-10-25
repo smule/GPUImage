@@ -87,7 +87,8 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
     runSynchronouslyOnVideoProcessingQueue(^{
         [GPUImageOpenGLESContext useImageProcessingContext];
         
-        if ([GPUImageOpenGLESContext supportsFastTextureUpload])
+		//mtg: need to ALWAYS use the swizzler, not exactly sure why, since the frames are coming from glReadPixel?
+        if (0) //[GPUImageOpenGLESContext supportsFastTextureUpload])
         {
             colorSwizzlingProgram = [[GPUImageOpenGLESContext sharedImageProcessingOpenGLESContext] programForVertexShaderString:kGPUImageVertexShaderString fragmentShaderString:kGPUImagePassthroughFragmentShaderString];
         }
@@ -253,11 +254,20 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
     }
 
     isRecording = NO;
-    runOnMainQueueWithoutDeadlocking(^{
-        [assetWriterVideoInput markAsFinished];
-        [assetWriterAudioInput markAsFinished];
-        [assetWriter finishWriting];
-    });
+	
+//    runOnMainQueueWithoutDeadlocking(^{
+//        [assetWriterVideoInput markAsFinished];
+//        [assetWriterAudioInput markAsFinished];
+//        [assetWriter finishWriting];
+//    });
+	
+	runSynchronouslyOnVideoProcessingQueue(^{
+		[assetWriterVideoInput markAsFinished];
+		[assetWriterAudioInput markAsFinished];
+		[assetWriter finishWriting];
+		
+		NSLog(@"done: status %d", assetWriter.status);
+	});
 }
 
 - (void)processAudioBuffer:(CMSampleBufferRef)audioBuffer;
@@ -332,18 +342,36 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
         // Code originally sourced from http://allmybrain.com/2011/12/08/rendering-to-a-texture-with-ios-5-texture-cache-api/
         
 
-        CVPixelBufferPoolCreatePixelBuffer (NULL, [assetWriterPixelBufferInput pixelBufferPool], &renderTarget);
-
-        CVOpenGLESTextureCacheCreateTextureFromImage (kCFAllocatorDefault, coreVideoTextureCache, renderTarget,
-                                                      NULL, // texture attributes
-                                                      GL_TEXTURE_2D,
-                                                      GL_RGBA, // opengl format
-                                                      (int)videoSize.width,
-                                                      (int)videoSize.height,
-                                                      GL_BGRA, // native iOS format
-                                                      GL_UNSIGNED_BYTE,
-                                                      0,
-                                                      &renderTexture);
+        err = CVPixelBufferPoolCreatePixelBuffer (NULL, [assetWriterPixelBufferInput pixelBufferPool], &renderTarget);
+        if (err)
+        {
+            NSAssert(NO, @"Error at CVPixelBufferPoolCreatePixelBuffer %d", err);
+        }
+		
+		//mtg: an experiment
+//		CFDictionaryRef empty; // empty value for attr value.
+//        CFMutableDictionaryRef attrs;
+//        empty = CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks); // our empty IOSurface properties dictionary
+//        attrs = CFDictionaryCreateMutable(kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+//        CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+//        err = CVPixelBufferCreate(kCFAllocatorDefault, (int)videoSize.width, (int)videoSize.height, kCVPixelFormatType_32BGRA, attrs, &renderTarget);
+//		if (err) {
+//            NSAssert(NO, @"Error at CVPixelBufferCreate %d", err);
+//		}
+		
+        err = CVOpenGLESTextureCacheCreateTextureFromImage (kCFAllocatorDefault, coreVideoTextureCache, renderTarget,
+															NULL, // texture attributes
+															GL_TEXTURE_2D,
+															GL_RGBA, // opengl format
+															(int)videoSize.width,
+															(int)videoSize.height,
+															GL_BGRA, // native iOS format
+															GL_UNSIGNED_BYTE,
+															0,
+															&renderTexture);
+		if (err) {
+            NSAssert(NO, @"Error at CVOpenGLESTextureCacheCreateTextureFromImage %d", err);
+		}
         
         glBindTexture(CVOpenGLESTextureGetTarget(renderTexture), CVOpenGLESTextureGetName(renderTexture));
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -482,7 +510,15 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
         NSLog(@"Had to drop a video frame");
         return;
     }
-    
+	
+	//NSLog(@"time since last: %f", CMTimeGetSeconds(CMTimeSubtract(frameTime, previousFrameTime)));
+	float diff = CMTimeGetSeconds(CMTimeSubtract(frameTime, previousFrameTime));
+	if (diff < 0.01) {
+		//NSLog(@"pres time (%f) is too soon after last frame (%f), ignoring! %f", CMTimeGetSeconds(frameTime), CMTimeGetSeconds(previousFrameTime), diff);
+		previousFrameTime = frameTime;
+		return;
+	}
+	
     // Render the frame with swizzled colors, so that they can be uploaded quickly as BGRA frames
     [GPUImageOpenGLESContext useImageProcessingContext];
     [self renderAtInternalSize];
@@ -509,15 +545,27 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
             glReadPixels(0, 0, videoSize.width, videoSize.height, GL_RGBA, GL_UNSIGNED_BYTE, pixelBufferData);
         }
     }
-        
-//    if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:CMTimeSubtract(frameTime, startTime)]) 
+		
+	if (assetWriter.status != AVAssetWriterStatusWriting) {
+		NSLog(@"status: %d", assetWriter.status);
+		if (assetWriter.status == AVAssetWriterStatusFailed) {
+			NSLog(@"FAILED: %@", assetWriter.error);
+		}
+		CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
+		if (![GPUImageOpenGLESContext supportsFastTextureUpload]) {
+			CVPixelBufferRelease(pixel_buffer);
+		}
+		return;
+	}
+	
+//    if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:CMTimeSubtract(frameTime, startTime)])
     if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:frameTime]) 
     {
-        NSLog(@"Problem appending pixel buffer at time: %lld", frameTime.value);
+        NSLog(@"Problem appending pixel buffer at time: %f (status %d)", CMTimeGetSeconds(frameTime), assetWriter.status);
     } 
     else 
     {
-//        NSLog(@"Recorded video sample time: %lld, %d, %lld", frameTime.value, frameTime.timescale, frameTime.epoch);
+//		NSLog(@"Recorded video sample time: %f", CMTimeGetSeconds(frameTime));
     }
     CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
     
