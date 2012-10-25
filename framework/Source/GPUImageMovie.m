@@ -7,6 +7,7 @@
     GPUImageMovieWriter *synchronizedMovieWriter;
     CVOpenGLESTextureCacheRef coreVideoTextureCache;
     AVAssetReader *reader;
+	NSLock* readerLock;
     CMTime previousFrameTime;
 	CMTime previousDisplayFrameTime;
     CFAbsoluteTime previousActualFrameTime;
@@ -38,6 +39,8 @@
 
     self.url = url;
     self.asset = nil;
+	
+	readerLock = [[NSLock alloc] init];
 
     return self;
 }
@@ -53,6 +56,8 @@
 
     self.url = nil;
     self.asset = asset;
+	
+	readerLock = [[NSLock alloc] init];
 
     return self;
 }
@@ -128,6 +133,8 @@
 
 - (void)processAsset
 {
+	[readerLock lock];
+	
     __unsafe_unretained GPUImageMovie *weakSelf = self;
     NSError *error = nil;
     reader = [AVAssetReader assetReaderWithAsset:self.asset error:&error];
@@ -154,7 +161,8 @@
 
     if ([reader startReading] == NO) 
     {
-            NSLog(@"Error reading from file at URL: %@", weakSelf.url);
+		NSLog(@"Error reading from file at URL: %@", weakSelf.url);
+		[readerLock unlock];
         return;
     }
         
@@ -187,10 +195,14 @@
                 [weakSelf endProcessing];
         }
     }
+	
+	[readerLock unlock];
 }
 
 - (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput;
 {
+	[readerLock lock];
+	
     if (reader.status == AVAssetReaderStatusReading)
     {
         CMSampleBufferRef sampleBufferRef = [readerVideoTrackOutput copyNextSampleBuffer];
@@ -253,6 +265,8 @@
             [self endProcessing];
         }
     }
+	
+	[readerLock unlock];
 }
 
 - (void)readNextAudioSampleFromOutput:(AVAssetReaderTrackOutput *)readerAudioTrackOutput;
@@ -376,6 +390,8 @@
 
 - (void)endProcessing;
 {
+	[readerLock lock];
+	
 	if (reader.status == AVAssetReaderStatusReading) {
 		[reader cancelReading];
 	}
@@ -394,7 +410,9 @@
 	{
 		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
 		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
-	}	
+	}
+	
+	[readerLock unlock];
 }
 
 @end
