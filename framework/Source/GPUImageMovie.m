@@ -203,10 +203,13 @@
 {
 	[readerLock lock];
 	
-    if (reader.status == AVAssetReaderStatusReading)
+	AVAssetReaderStatus readerStatus = reader.status;
+	
+    if (readerStatus == AVAssetReaderStatusReading)
     {
         CMSampleBufferRef sampleBufferRef = [readerVideoTrackOutput copyNextSampleBuffer];
-        if (sampleBufferRef) 
+		[readerLock unlock];
+        if (sampleBufferRef)
         {
 			// Do this outside of the video processing queue to not slow that down while waiting
 			CMTime currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBufferRef);
@@ -237,9 +240,9 @@
 				
 				//NSLog(@"displayed frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
 			}
-//			else {
-//				NSLog(@"skipped frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
-//			}
+			//			else {
+			//				NSLog(@"skipped frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
+			//			}
 			
 			if (frameTimeDisplayDifference < 0) {
 				previousDisplayFrameTime = kCMTimeZero;
@@ -260,13 +263,18 @@
     }
     else if (synchronizedMovieWriter != nil)
     {
-        if (reader.status == AVAssetWriterStatusCompleted) 
+        if (readerStatus == AVAssetWriterStatusCompleted)
         {
+			[readerLock unlock];
             [self endProcessing];
         }
+		else {
+			[readerLock unlock];
+		}
     }
-	
-	[readerLock unlock];
+	else {
+		[readerLock unlock];
+	}
 }
 
 - (void)readNextAudioSampleFromOutput:(AVAssetReaderTrackOutput *)readerAudioTrackOutput;
