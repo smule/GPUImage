@@ -138,13 +138,19 @@
     __unsafe_unretained GPUImageMovie *weakSelf = self;
     NSError *error = nil;
     reader = [AVAssetReader assetReaderWithAsset:self.asset error:&error];
-
+	
+    //mtg: naturalSize is NOT deprecated for AVComposition, and since that's what we're primarily using this for...
+    CGSize assetSize = [self.asset naturalSize];
+	
     NSMutableDictionary *outputSettings = [NSMutableDictionary dictionary];
     [outputSettings setObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA]  forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
+	[outputSettings setObject:[NSNumber numberWithInt:assetSize.width] forKey: (NSString*)kCVPixelBufferWidthKey];
+	[outputSettings setObject:[NSNumber numberWithInt:assetSize.height] forKey: (NSString*)kCVPixelBufferHeightKey];
     // Maybe set alwaysCopiesSampleData to NO on iOS 5.0 for faster video decoding
-    AVAssetReaderTrackOutput *readerVideoTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:[[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0] outputSettings:outputSettings];
+	AVAssetTrack *assetVideoTrack = [[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+    AVAssetReaderTrackOutput *readerVideoTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:assetVideoTrack outputSettings:outputSettings];
     [reader addOutput:readerVideoTrackOutput];
-
+	
     NSArray *audioTracks = [self.asset tracksWithMediaType:AVMediaTypeAudio];
     BOOL shouldRecordAudioTrack = (([audioTracks count] > 0) && (weakSelf.audioEncodingTarget != nil) );
     AVAssetReaderTrackOutput *readerAudioTrackOutput = nil;
