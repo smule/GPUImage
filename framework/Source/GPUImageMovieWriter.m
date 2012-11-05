@@ -88,7 +88,7 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
         [GPUImageOpenGLESContext useImageProcessingContext];
         
 		//mtg: need to ALWAYS use the swizzler, not exactly sure why, since the frames are coming from glReadPixel?
-        if (0) //[GPUImageOpenGLESContext supportsFastTextureUpload])
+        if (1) //[GPUImageOpenGLESContext supportsFastTextureUpload])
         {
             colorSwizzlingProgram = [[GPUImageOpenGLESContext sharedImageProcessingOpenGLESContext] programForVertexShaderString:kGPUImageVertexShaderString fragmentShaderString:kGPUImagePassthroughFragmentShaderString];
         }
