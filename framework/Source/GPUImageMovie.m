@@ -164,14 +164,17 @@
         readerAudioTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:audioTrack outputSettings:nil];
         [reader addOutput:readerAudioTrackOutput];
     }
+	
+	BOOL didStart = [reader startReading];
+	
+	[readerLock unlock];
 
-    if ([reader startReading] == NO) 
+    if (!didStart)
     {
 		NSLog(@"Error reading from file at URL: %@", weakSelf.url);
-		[readerLock unlock];
         return;
     }
-        
+    
     if (synchronizedMovieWriter != nil)
     {
         [synchronizedMovieWriter setVideoInputReadyCallback:^{
@@ -185,7 +188,7 @@
         [synchronizedMovieWriter enableSynchronizationCallbacks];
     }
     else
-    {
+    {	
         while (reader.status == AVAssetReaderStatusReading) 
         {
                 [weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
@@ -201,8 +204,6 @@
                 [weakSelf endProcessing];
         }
     }
-	
-	[readerLock unlock];
 }
 
 - (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput;
