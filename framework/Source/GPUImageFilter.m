@@ -175,7 +175,9 @@ void dataProviderUnlockCallback (void *info, const void *data, size_t size)
         GLubyte *rawImagePixels;
         
         CGDataProviderRef dataProvider;
-        if ([GPUImageOpenGLESContext supportsFastTextureUpload] && preparedToCaptureImage)
+        // ian: for some reason this is failing for the instagram filters
+        //      i've therefore disabled it -- the instagram thumbnails don't show up, but the filters work
+        if (0) // ([GPUImageOpenGLESContext supportsFastTextureUpload] && preparedToCaptureImage)
         {
             //        glFlush();
             glFinish();
