@@ -166,9 +166,6 @@
     }
 	
 	BOOL didStart = [reader startReading];
-	
-	[readerLock unlock];
-
     if (!didStart)
     {
 		NSLog(@"Error reading from file at URL: %@", weakSelf.url);
@@ -186,10 +183,14 @@
         }];
 
         [synchronizedMovieWriter enableSynchronizationCallbacks];
+		
+		[readerLock unlock];
     }
     else
-    {	
-        while (reader.status == AVAssetReaderStatusReading) 
+    {
+		[readerLock unlock];
+		
+        while (reader.status == AVAssetReaderStatusReading)
         {
                 [weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
 
@@ -407,6 +408,13 @@
 {
 	[readerLock lock];
 	
+	if (synchronizedMovieWriter != nil)
+	{
+		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
+		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
+		[synchronizedMovieWriter finishRecording];
+	}
+	
 	if (reader.status == AVAssetReaderStatusReading) {
 		[reader cancelReading];
 	}
@@ -421,12 +429,6 @@
 	for (id<GPUImageInput> currentTarget in targets)
 	{
 		[currentTarget endProcessing];
-	}
-	
-	if (synchronizedMovieWriter != nil)
-	{
-		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
-		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
 	}
 }
 
