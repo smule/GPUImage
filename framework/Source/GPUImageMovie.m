@@ -412,7 +412,7 @@
 	{
 		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
 		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
-		[synchronizedMovieWriter finishRecording];
+		[synchronizedMovieWriter endProcessing];
 	}
 	
 	if (reader.status == AVAssetReaderStatusReading) {
