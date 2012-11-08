@@ -135,19 +135,30 @@
 {
 	[readerLock lock];
 	
-    __unsafe_unretained GPUImageMovie *weakSelf = self;
+    //__unsafe_unretained GPUImageMovie *weakSelf = self;
+	//ok wtf brad: http://stackoverflow.com/questions/8592289/arc-the-meaning-of-unsafe-unretained
+	//see "why would you ever use __unsafe_unretained?"
+	__weak GPUImageMovie *weakSelf = self;
     NSError *error = nil;
     reader = [AVAssetReader assetReaderWithAsset:self.asset error:&error];
 	
+	AVAssetTrack *assetVideoTrack = [[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+	
     //mtg: naturalSize is NOT deprecated for AVComposition, and since that's what we're primarily using this for...
-    CGSize assetSize = [self.asset naturalSize];
+	CGSize assetSize;
+	if ([self.asset isKindOfClass:[AVComposition class]]) {
+		assetSize = [(AVComposition*)self.asset naturalSize];
+	}
+	else {
+		assetSize = [assetVideoTrack naturalSize];
+	}
 	
     NSMutableDictionary *outputSettings = [NSMutableDictionary dictionary];
     [outputSettings setObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA]  forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
 	[outputSettings setObject:[NSNumber numberWithInt:assetSize.width] forKey: (NSString*)kCVPixelBufferWidthKey];
 	[outputSettings setObject:[NSNumber numberWithInt:assetSize.height] forKey: (NSString*)kCVPixelBufferHeightKey];
     // Maybe set alwaysCopiesSampleData to NO on iOS 5.0 for faster video decoding
-	AVAssetTrack *assetVideoTrack = [[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+
     AVAssetReaderTrackOutput *readerVideoTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:assetVideoTrack outputSettings:outputSettings];
     [reader addOutput:readerVideoTrackOutput];
 	
@@ -175,11 +186,16 @@
     if (synchronizedMovieWriter != nil)
     {
         [synchronizedMovieWriter setVideoInputReadyCallback:^{
-            [weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
+			//GPUImageMovie *strongSelf = weakSelf;
+			if (weakSelf) {
+				[weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
+			}
         }];
 
         [synchronizedMovieWriter setAudioInputReadyCallback:^{
-            [weakSelf readNextAudioSampleFromOutput:readerAudioTrackOutput];
+			if (weakSelf) {
+				[weakSelf readNextAudioSampleFromOutput:readerAudioTrackOutput];
+			}
         }];
 
         [synchronizedMovieWriter enableSynchronizationCallbacks];
@@ -406,14 +422,14 @@
 
 - (void)endProcessing;
 {
-	[readerLock lock];
-	
 	if (synchronizedMovieWriter != nil)
 	{
 		[synchronizedMovieWriter setVideoInputReadyCallback:^{}];
 		[synchronizedMovieWriter setAudioInputReadyCallback:^{}];
-		[synchronizedMovieWriter endProcessing];
+		[synchronizedMovieWriter endProcessing];  //we want the writer to stop ASAP
 	}
+	
+	[readerLock lock];
 	
 	if (reader.status == AVAssetReaderStatusReading) {
 		[reader cancelReading];

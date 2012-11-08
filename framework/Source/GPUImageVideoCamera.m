@@ -153,15 +153,16 @@
         CFRelease(coreVideoTextureCache);
     }
 
-    if (cameraProcessingQueue != NULL)
-    {
-        dispatch_release(cameraProcessingQueue);
-    }
-
-    if (audioProcessingQueue != NULL)
-    {
-        dispatch_release(audioProcessingQueue);
-    }
+	//don't need these with ARC?
+//    if (cameraProcessingQueue != NULL)
+//    {
+//        dispatch_release(cameraProcessingQueue);
+//    }
+//
+//    if (audioProcessingQueue != NULL)
+//    {
+//        dispatch_release(audioProcessingQueue);
+//    }
 }
 
 - (void)removeInputsAndOutputs;

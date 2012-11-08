@@ -262,11 +262,13 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 //    });
 	
 	runSynchronouslyOnVideoProcessingQueue(^{
-		[assetWriterVideoInput markAsFinished];
-		[assetWriterAudioInput markAsFinished];
-		[assetWriter finishWriting];
+		if (assetWriter.status == AVAssetWriterStatusWriting) {
+			[assetWriterVideoInput markAsFinished];
+			[assetWriterAudioInput markAsFinished];
+			[assetWriter finishWriting];
+		}
 		
-		NSLog(@"done: status %d", assetWriter.status);
+		NSLog(@"done writing: status %d", assetWriter.status);
 	});
 }
 
