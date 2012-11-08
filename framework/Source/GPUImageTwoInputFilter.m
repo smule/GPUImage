@@ -238,7 +238,7 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
     // || (hasReceivedFirstFrame && secondFrameCheckDisabled) || (hasReceivedSecondFrame && firstFrameCheckDisabled)
     if ((hasReceivedFirstFrame && hasReceivedSecondFrame) || updatedMovieFrameOppositeStillImage)
     {
-        [super newFrameReadyAtTime:frameTime atIndex:0];
+        [super newFrameReadyAtTime:firstFrameTime atIndex:0];
         hasReceivedFirstFrame = NO;
         hasReceivedSecondFrame = NO;
     }

@@ -515,7 +515,8 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 	float diff = CMTimeGetSeconds(CMTimeSubtract(frameTime, previousFrameTime));
 	if (diff < 0.01) {
 		//NSLog(@"pres time (%f) is too soon after last frame (%f), ignoring! %f", CMTimeGetSeconds(frameTime), CMTimeGetSeconds(previousFrameTime), diff);
-		previousFrameTime = frameTime;
+        // ian: i feel we should not update previousFrameTime here
+		//previousFrameTime = frameTime;
 		return;
 	}
 	
