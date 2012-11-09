@@ -25,6 +25,8 @@
 @synthesize runBenchmark = _runBenchmark;
 @synthesize playAtActualSpeed = _playAtActualSpeed;
 
+@synthesize linkedOverlay = _linkedOverlay;
+
 #pragma mark -
 #pragma mark Initialization and teardown
 
@@ -39,6 +41,7 @@
 
     self.url = url;
     self.asset = nil;
+    self.linkedOverlay = nil;
 	
 	readerLock = [[NSLock alloc] init];
 
@@ -56,6 +59,7 @@
 
     self.url = nil;
     self.asset = asset;
+    self.linkedOverlay = nil;
 	
 	readerLock = [[NSLock alloc] init];
 
@@ -245,6 +249,12 @@
 			
 			CGFloat frameTimeDisplayDifference = CMTimeGetSeconds(CMTimeSubtract(previousFrameTime, previousDisplayFrameTime));
 			
+            // ian: inform the linked overlay of our current time
+            if (self.linkedOverlay)
+            {
+                self.linkedOverlay.targetTime = currentSampleTime;
+            }
+            
 			//mtg: filter out frames that are displayed too quickly that we'll never realistically display them
 			//mtg: glitch frames always come just barely (160 ns) before the correct frame, filter these out too, what's the magic number though?? 10 usec seems to do it
 			if (previousSampleBufferRef && (CMTIME_IS_INVALID(previousDisplayFrameTime) || (frameTimeDisplayDifference > 0.02 && frameTimeDifference > 1e-5)))

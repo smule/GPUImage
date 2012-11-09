@@ -3,6 +3,10 @@
 #import "GPUImageOpenGLESContext.h"
 #import "GPUImageOutput.h"
 
+@protocol LinkedOverlayDelegate <NSObject>
+@property (readwrite,assign) CMTime targetTime;
+@end
+
 /** Source object for filtering movies
  */
 @interface GPUImageMovie : GPUImageOutput
@@ -17,6 +21,11 @@
 /** This determines whether to play back a movie as fast as the frames can be processed, or if the original speed of the movie should be respected. Defaults to NO.
  */
 @property(readwrite, nonatomic) BOOL playAtActualSpeed;
+
+// ian: adding a linked overlay property here
+//      Basically, we will inform the linked overlay of our current time every time we process a frame.
+//      The overlay is responsible for staying in sync with us.
+@property(readwrite, assign) id<LinkedOverlayDelegate> linkedOverlay;
 
 /// @name Initialization and teardown
 - (id)initWithAsset:(AVAsset *)asset;
