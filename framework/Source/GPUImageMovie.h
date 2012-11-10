@@ -27,6 +27,8 @@
 //      The overlay is responsible for staying in sync with us.
 @property(readwrite, assign) id<LinkedOverlayDelegate> linkedOverlay;
 
+@property float hardFrameDifferenceLimit;
+
 /// @name Initialization and teardown
 - (id)initWithAsset:(AVAsset *)asset;
 - (id)initWithURL:(NSURL *)url;

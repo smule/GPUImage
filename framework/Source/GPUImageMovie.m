@@ -27,6 +27,8 @@
 
 @synthesize linkedOverlay = _linkedOverlay;
 
+@synthesize hardFrameDifferenceLimit = _hardFrameDifferenceLimit;
+
 #pragma mark -
 #pragma mark Initialization and teardown
 
@@ -257,7 +259,7 @@
             
 			//mtg: filter out frames that are displayed too quickly that we'll never realistically display them
 			//mtg: glitch frames always come just barely (160 ns) before the correct frame, filter these out too, what's the magic number though?? 10 usec seems to do it
-			if (previousSampleBufferRef && (CMTIME_IS_INVALID(previousDisplayFrameTime) || (frameTimeDisplayDifference > 0.06 && frameTimeDifference > 1e-5)))
+			if (previousSampleBufferRef && (CMTIME_IS_INVALID(previousDisplayFrameTime) || (frameTimeDisplayDifference > _hardFrameDifferenceLimit && frameTimeDifference > 1e-5)))
 			{
 				if (_playAtActualSpeed && frameTimeDifference > actualTimeDifference)
 				{
