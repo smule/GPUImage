@@ -4,7 +4,7 @@
 #import "GPUImageOutput.h"
 
 @protocol LinkedOverlayDelegate <NSObject>
-@property (readwrite,assign) CMTime targetTime;
+- (void)processFrameAtTargetTime:(CMTime)targetTime;
 @end
 
 /** Source object for filtering movies

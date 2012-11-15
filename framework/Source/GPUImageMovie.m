@@ -251,10 +251,10 @@
 			
 			CGFloat frameTimeDisplayDifference = CMTimeGetSeconds(CMTimeSubtract(previousFrameTime, previousDisplayFrameTime));
 			
-            // ian: inform the linked overlay of our current time
+            // ian: have the linked overlay process a frame at our current time
             if (self.linkedOverlay)
             {
-                self.linkedOverlay.targetTime = currentSampleTime;
+                [self.linkedOverlay processFrameAtTargetTime:currentSampleTime];
             }
             
 			//mtg: filter out frames that are displayed too quickly that we'll never realistically display them
