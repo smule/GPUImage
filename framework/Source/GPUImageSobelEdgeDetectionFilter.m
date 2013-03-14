@@ -85,8 +85,8 @@ NSString *const kGPUImageSobelEdgeDetectionFragmentShaderString = SHADER_STRING
 
         runSynchronouslyOnVideoProcessingQueue(^{
             [GPUImageOpenGLESContext setActiveShaderProgram:secondFilterProgram];
-            glUniform1f(texelWidthUniform, _texelWidth);
-            glUniform1f(texelHeightUniform, _texelHeight);
+            [self setFloat:_texelWidth forUniform:texelWidthUniform program:secondFilterProgram];
+            [self setFloat:_texelHeight forUniform:texelHeightUniform program:secondFilterProgram];
         });
     }
 }

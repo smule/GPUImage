@@ -151,13 +151,14 @@
 	AVAssetTrack *assetVideoTrack = [[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
 	
     //mtg: naturalSize is NOT deprecated for AVComposition, and since that's what we're primarily using this for...
+    //ian: seems to be working for me calling naturalSize on the track
 	CGSize assetSize;
-	if ([self.asset isKindOfClass:[AVComposition class]]) {
-		assetSize = [(AVComposition*)self.asset naturalSize];
-	}
-	else {
+	//if ([self.asset isKindOfClass:[AVComposition class]]) {
+	//	assetSize = [(AVComposition*)self.asset naturalSize];
+	//}
+	//else {
 		assetSize = [assetVideoTrack naturalSize];
-	}
+	//}
 	
     NSMutableDictionary *outputSettings = [NSMutableDictionary dictionary];
     [outputSettings setObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA]  forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
