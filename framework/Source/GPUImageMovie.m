@@ -148,26 +148,26 @@
     NSError *error = nil;
     reader = [AVAssetReader assetReaderWithAsset:self.asset error:&error];
 	
-	AVAssetTrack *assetVideoTrack = [[self.asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
-	
-    //mtg: naturalSize is NOT deprecated for AVComposition, and since that's what we're primarily using this for...
-    //ian: seems to be working for me calling naturalSize on the track
-	CGSize assetSize;
-	//if ([self.asset isKindOfClass:[AVComposition class]]) {
-	//	assetSize = [(AVComposition*)self.asset naturalSize];
-	//}
-	//else {
-		assetSize = [assetVideoTrack naturalSize];
-	//}
-	
-    NSMutableDictionary *outputSettings = [NSMutableDictionary dictionary];
-    [outputSettings setObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA]  forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
-	[outputSettings setObject:[NSNumber numberWithInt:assetSize.width] forKey: (NSString*)kCVPixelBufferWidthKey];
-	[outputSettings setObject:[NSNumber numberWithInt:assetSize.height] forKey: (NSString*)kCVPixelBufferHeightKey];
-    // Maybe set alwaysCopiesSampleData to NO on iOS 5.0 for faster video decoding
-
-    AVAssetReaderTrackOutput *readerVideoTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:assetVideoTrack outputSettings:outputSettings];
-    [reader addOutput:readerVideoTrackOutput];
+	for (AVAssetTrack *assetVideoTrack in [self.asset tracksWithMediaType:AVMediaTypeVideo]) {
+		//mtg: naturalSize is NOT deprecated for AVComposition, and since that's what we're primarily using this for...
+		//ian: seems to be working for me calling naturalSize on the track
+		CGSize assetSize;
+		//if ([self.asset isKindOfClass:[AVComposition class]]) {
+		//	assetSize = [(AVComposition*)self.asset naturalSize];
+		//}
+		//else {
+			assetSize = [assetVideoTrack naturalSize];
+		//}
+		
+		NSMutableDictionary *outputSettings = [NSMutableDictionary dictionary];
+		[outputSettings setObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA]  forKey: (NSString*)kCVPixelBufferPixelFormatTypeKey];
+		[outputSettings setObject:[NSNumber numberWithInt:assetSize.width] forKey: (NSString*)kCVPixelBufferWidthKey];
+		[outputSettings setObject:[NSNumber numberWithInt:assetSize.height] forKey: (NSString*)kCVPixelBufferHeightKey];
+		// Maybe set alwaysCopiesSampleData to NO on iOS 5.0 for faster video decoding
+		
+		AVAssetReaderTrackOutput *readerVideoTrackOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:assetVideoTrack outputSettings:outputSettings];
+		[reader addOutput:readerVideoTrackOutput];
+	}
 	
     NSArray *audioTracks = [self.asset tracksWithMediaType:AVMediaTypeAudio];
     BOOL shouldRecordAudioTrack = (([audioTracks count] > 0) && (weakSelf.audioEncodingTarget != nil) );
@@ -195,7 +195,7 @@
         [synchronizedMovieWriter setVideoInputReadyCallback:^{
 			//GPUImageMovie *strongSelf = weakSelf;
 			if (weakSelf) {
-				[weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
+				[weakSelf readNextVideoFrame];
 			}
         }];
 
@@ -215,8 +215,9 @@
 		
         while (reader.status == AVAssetReaderStatusReading)
         {
-                [weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
-
+			//[weakSelf readNextVideoFrameFromOutput:readerVideoTrackOutput];
+			[weakSelf readNextVideoFrame];
+			
             if ( (shouldRecordAudioTrack) && (!audioEncodingIsFinished) )
             {
                     [weakSelf readNextAudioSampleFromOutput:readerAudioTrackOutput];
@@ -230,9 +231,20 @@
     }
 }
 
+- (void)readNextVideoFrame {
+	//read all video tracks!
+	for (AVAssetReaderTrackOutput* output in reader.outputs) {
+		if (output.mediaType == AVMediaTypeVideo) {
+			[self readNextVideoFrameFromOutput:output];
+		}
+	}
+}
+
 - (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput;
 {
 	[readerLock lock];
+	
+	NSLog(@"trackID: %d", readerVideoTrackOutput.track.trackID);
 	
 	AVAssetReaderStatus readerStatus = reader.status;
 	
