@@ -1,10 +1,15 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import "GPUImageTwoInputFilter.h"
 #import "GPUImageOpenGLESContext.h"
 #import "GPUImageOutput.h"
 
 @protocol LinkedOverlayDelegate <NSObject>
 - (void)processFrameAtTargetTime:(CMTime)targetTime;
+@end
+
+@protocol TransitionFilterDelegate <NSObject>
+- (void)updateTransition:(float)time;
 @end
 
 /** Source object for filtering movies
@@ -27,6 +32,9 @@
 //      The overlay is responsible for staying in sync with us.
 @property(readwrite, assign) id<LinkedOverlayDelegate> linkedOverlay;
 
+// ian: adding a transition filter property here
+@property(readwrite, retain) GPUImageTwoInputFilter<TransitionFilterDelegate> *transitionFilter;
+
 @property float hardFrameDifferenceLimit;
 
 /// @name Initialization and teardown
@@ -36,10 +44,10 @@
 
 /// @name Movie processing
 - (void)enableSynchronizedEncodingUsingMovieWriter:(GPUImageMovieWriter *)movieWriter;
-- (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput;
+- (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput transitionIndex:(int)transitionIndex;
 - (void)readNextAudioSampleFromOutput:(AVAssetReaderTrackOutput *)readerAudioTrackOutput;
 - (void)startProcessing;
 - (void)endProcessing;
-- (void)processMovieFrame:(CMSampleBufferRef)movieSampleBuffer; 
+- (void)processMovieFrame:(CMSampleBufferRef)movieSampleBuffer transitionIndex:(int)transitionIndex;
 
 @end

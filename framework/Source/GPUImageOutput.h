@@ -46,6 +46,9 @@ void reportAvailableMemoryForGPUImage(NSString *tag);
  */
 - (NSArray*)targets;
 
+// ian: we might want the indices also
+- (NSArray*)targetTextureIndices;
+
 /** Adds a target to receive notifications when new frames are available.
  
  The target will be asked for its next available texture.

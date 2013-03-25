@@ -12,6 +12,9 @@
 	CMTime previousDisplayFrameTime;
     CFAbsoluteTime previousActualFrameTime;
 	CMSampleBufferRef previousSampleBufferRef;
+    
+    // ian: we need another output texture to support transitions
+    GLuint secondOutputTexture;
 }
 
 - (void)processAsset;
@@ -26,6 +29,8 @@
 @synthesize playAtActualSpeed = _playAtActualSpeed;
 
 @synthesize linkedOverlay = _linkedOverlay;
+
+@synthesize transitionFilter = _transitionFilter;
 
 @synthesize hardFrameDifferenceLimit = _hardFrameDifferenceLimit;
 
@@ -44,6 +49,7 @@
     self.url = url;
     self.asset = nil;
     self.linkedOverlay = nil;
+    self.transitionFilter = nil;
 	
 	readerLock = [[NSLock alloc] init];
 
@@ -62,6 +68,7 @@
     self.url = nil;
     self.asset = asset;
     self.linkedOverlay = nil;
+    self.transitionFilter = nil;
 	
 	readerLock = [[NSLock alloc] init];
 
@@ -97,6 +104,51 @@
         CFRelease(coreVideoTextureCache);
     }
 }
+
+#pragma mark -
+#pragma mark Manage the output texture
+
+- (void)initializeOutputTexture;
+{
+    runSynchronouslyOnVideoProcessingQueue(^{
+        [GPUImageOpenGLESContext useImageProcessingContext];
+        
+        glActiveTexture(GL_TEXTURE0);
+        glGenTextures(1, &outputTexture);
+        glBindTexture(GL_TEXTURE_2D, outputTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // This is necessary for non-power-of-two textures
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        
+        glGenTextures(1, &secondOutputTexture);
+        glBindTexture(GL_TEXTURE_2D, secondOutputTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    });
+}
+
+- (void)deleteOutputTexture;
+{
+    if (outputTexture)
+    {
+        glDeleteTextures(1, &outputTexture);
+        outputTexture = 0;
+    }
+    
+    if (secondOutputTexture)
+    {
+        glDeleteTextures(1, &secondOutputTexture);
+        secondOutputTexture = 0;
+    }
+}
+
+
 #pragma mark -
 #pragma mark Movie processing
 
@@ -233,14 +285,16 @@
 
 - (void)readNextVideoFrame {
 	//read all video tracks!
+    int transitionIndex = 0;
 	for (AVAssetReaderTrackOutput* output in reader.outputs) {
 		if (output.mediaType == AVMediaTypeVideo) {
-			[self readNextVideoFrameFromOutput:output];
+			[self readNextVideoFrameFromOutput:output transitionIndex:transitionIndex];
+            transitionIndex += 1;
 		}
 	}
 }
 
-- (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput;
+- (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput transitionIndex:(int)transitionIndex;
 {
 	[readerLock lock];
 	
@@ -284,7 +338,7 @@
 				
 				__unsafe_unretained GPUImageMovie *weakSelf = self;
 				runSynchronouslyOnVideoProcessingQueue(^{
-					[weakSelf processMovieFrame:previousSampleBufferRef];
+					[weakSelf processMovieFrame:previousSampleBufferRef transitionIndex:transitionIndex];
 				});
 				
 				//NSLog(@"displayed frame at %lld / %d (%e %e)", previousFrameTime.value, previousFrameTime.timescale, frameTimeDifference, frameTimeDisplayDifference);
@@ -350,7 +404,7 @@
     }
 }
 
-- (void)processMovieFrame:(CMSampleBufferRef)movieSampleBuffer; 
+- (void)processMovieFrame:(CMSampleBufferRef)movieSampleBuffer transitionIndex:(int)transitionIndex
 {
 //    CMTimeGetSeconds
 //    CMTimeSubtract
@@ -393,21 +447,30 @@
         
         outputTexture = CVOpenGLESTextureGetName(texture);
         //        glBindTexture(CVOpenGLESTextureGetTarget(texture), outputTexture);
-        glBindTexture(GL_TEXTURE_2D, outputTexture);
+        glBindTexture(GL_TEXTURE_2D, (transitionIndex == 0) ? outputTexture : secondOutputTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         
-        for (id<GPUImageInput> currentTarget in targets)
+        if (self.transitionFilter)
         {
-            NSInteger indexOfObject = [targets indexOfObject:currentTarget];
-            NSInteger targetTextureIndex = [[targetTextureIndices objectAtIndex:indexOfObject] integerValue];
-            
-            [currentTarget setInputSize:CGSizeMake(bufferWidth, bufferHeight) atIndex:targetTextureIndex];
-            [currentTarget setInputTexture:outputTexture atIndex:targetTextureIndex];
-            
-            [currentTarget newFrameReadyAtTime:currentSampleTime atIndex:targetTextureIndex];
+            [self.transitionFilter setInputSize:CGSizeMake(bufferWidth, bufferHeight) atIndex:transitionIndex];
+            [self.transitionFilter setInputTexture:outputTexture atIndex:transitionIndex];
+            [self.transitionFilter newFrameReadyAtTime:currentSampleTime atIndex:transitionIndex];
+        }
+        else
+        {
+            for (id<GPUImageInput> currentTarget in targets)
+            {
+                NSInteger indexOfObject = [targets indexOfObject:currentTarget];
+                NSInteger targetTextureIndex = [[targetTextureIndices objectAtIndex:indexOfObject] integerValue];
+                
+                [currentTarget setInputSize:CGSizeMake(bufferWidth, bufferHeight) atIndex:targetTextureIndex];
+                [currentTarget setInputTexture:outputTexture atIndex:targetTextureIndex];
+                
+                [currentTarget newFrameReadyAtTime:currentSampleTime atIndex:targetTextureIndex];
+            }
         }
         
         CVPixelBufferUnlockBaseAddress(movieFrame, 0);
@@ -422,19 +485,29 @@
         // Upload to texture
         CVPixelBufferLockBaseAddress(movieFrame, 0);
         
-        glBindTexture(GL_TEXTURE_2D, outputTexture);
+        glBindTexture(GL_TEXTURE_2D, (transitionIndex == 0) ? outputTexture : secondOutputTexture);
         // Using BGRA extension to pull in video frame data directly
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bufferWidth, bufferHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, CVPixelBufferGetBaseAddress(movieFrame));
         
         CGSize currentSize = CGSizeMake(bufferWidth, bufferHeight);
-        for (id<GPUImageInput> currentTarget in targets)
+        
+        if (self.transitionFilter)
         {
-            NSInteger indexOfObject = [targets indexOfObject:currentTarget];
-            NSInteger targetTextureIndex = [[targetTextureIndices objectAtIndex:indexOfObject] integerValue];
-
-            [currentTarget setInputSize:currentSize atIndex:targetTextureIndex];
-            [currentTarget newFrameReadyAtTime:currentSampleTime atIndex:targetTextureIndex];
+            [self.transitionFilter setInputSize:currentSize atIndex:transitionIndex];
+            [self.transitionFilter newFrameReadyAtTime:currentSampleTime atIndex:transitionIndex];
         }
+        else
+        {
+            for (id<GPUImageInput> currentTarget in targets)
+            {
+                NSInteger indexOfObject = [targets indexOfObject:currentTarget];
+                NSInteger targetTextureIndex = [[targetTextureIndices objectAtIndex:indexOfObject] integerValue];
+                
+                [currentTarget setInputSize:currentSize atIndex:targetTextureIndex];
+                [currentTarget newFrameReadyAtTime:currentSampleTime atIndex:targetTextureIndex];
+            }
+        }
+        
         CVPixelBufferUnlockBaseAddress(movieFrame, 0);
     }
     
@@ -471,6 +544,97 @@
 	{
 		[currentTarget endProcessing];
 	}
+}
+
+// ian: if there's a transition filter, add the targets to that instead (& same with remove)
+- (void)addTarget:(id<GPUImageInput>)newTarget;
+{
+    if (self.transitionFilter)
+        [self.transitionFilter addTarget:newTarget];
+    else
+        [super addTarget:newTarget];
+}
+
+- (void)addTarget:(id<GPUImageInput>)newTarget atTextureLocation:(NSInteger)textureLocation;
+{
+    if (self.transitionFilter)
+        [self.transitionFilter addTarget:newTarget atTextureLocation:textureLocation];
+    else
+        [super addTarget:newTarget atTextureLocation:textureLocation];
+}
+
+- (void)removeTarget:(id<GPUImageInput>)targetToRemove
+{
+    if (self.transitionFilter)
+        [self.transitionFilter removeTarget:targetToRemove];
+    else
+        [super removeTarget:targetToRemove];
+}
+
+- (void)removeAllTargets
+{
+    if (self.transitionFilter)
+        [self.transitionFilter removeAllTargets];
+    else
+        [super removeAllTargets];
+}
+
+- (void)setTransitionFilter:(GPUImageTwoInputFilter<TransitionFilterDelegate> *)newTransitionFilter
+{
+    if (_transitionFilter)
+    {
+        // there was a previous transition filter -- remove all its targets and add them to this new one
+        NSArray *oldTargets = _transitionFilter.targets;
+        NSArray *oldIndices = _transitionFilter.targetTextureIndices;
+        [_transitionFilter removeAllTargets];
+        
+        if (newTransitionFilter)
+        {
+            for (id<GPUImageInput> target in oldTargets)
+            {
+                NSInteger indexOfObject = [oldTargets indexOfObject:target];
+                NSInteger textureIndexOfTarget = [[oldIndices objectAtIndex:indexOfObject] integerValue];
+                [newTransitionFilter addTarget:target atTextureLocation:textureIndexOfTarget];
+            }
+        }
+        else
+        {
+            // add the targets to the movie itself
+            for (id<GPUImageInput> target in oldTargets)
+            {
+                NSInteger indexOfObject = [oldTargets indexOfObject:target];
+                NSInteger textureIndexOfTarget = [[oldIndices objectAtIndex:indexOfObject] integerValue];
+                [super addTarget:target atTextureLocation:textureIndexOfTarget];
+            }
+        }
+        
+        // remove the old transition filter as a target
+        runSynchronouslyOnVideoProcessingQueue(^{
+            [_transitionFilter setInputSize:CGSizeZero atIndex:0];
+            [_transitionFilter setInputTexture:0 atIndex:0];
+            [_transitionFilter setInputRotation:kGPUImageNoRotation atIndex:0];
+            
+            [_transitionFilter setInputSize:CGSizeZero atIndex:1];
+            [_transitionFilter setInputTexture:0 atIndex:1];
+            [_transitionFilter setInputRotation:kGPUImageNoRotation atIndex:1];
+        });
+    }
+    
+    if (newTransitionFilter)
+    {
+        // add the new transition filter as a target
+        runSynchronouslyOnVideoProcessingQueue(^{
+            [newTransitionFilter setInputTexture:outputTexture atIndex:0];
+            [newTransitionFilter setInputTexture:secondOutputTexture atIndex:1];
+        });
+    }
+    
+    _transitionFilter = newTransitionFilter;
+}
+
+- (GPUImageTwoInputFilter<TransitionFilterDelegate> *)transitionFilter
+{
+    return _transitionFilter;
 }
 
 @end

@@ -129,6 +129,11 @@ void reportAvailableMemoryForGPUImage(NSString *tag)
 	return [NSArray arrayWithArray:targets];
 }
 
+- (NSArray*)targetTextureIndices;
+{
+    return [NSArray arrayWithArray:targetTextureIndices];
+}
+
 - (void)addTarget:(id<GPUImageInput>)newTarget;
 {
     NSInteger nextAvailableTextureIndex = [newTarget nextAvailableTextureIndex];
