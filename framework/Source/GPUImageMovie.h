@@ -9,6 +9,7 @@
 @end
 
 @protocol TransitionFilterDelegate <NSObject>
+- (void)startTransition:(float)startTime forDuration:(float)duration reverse:(BOOL)reverse;
 - (void)updateTransition:(float)time;
 @end
 

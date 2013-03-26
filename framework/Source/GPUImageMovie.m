@@ -8,10 +8,8 @@
     CVOpenGLESTextureCacheRef coreVideoTextureCache;
     AVAssetReader *reader;
 	NSLock* readerLock;
-    CMTime previousFrameTime;
-	CMTime previousDisplayFrameTime;
-    CFAbsoluteTime previousActualFrameTime;
-	CMSampleBufferRef previousSampleBufferRef;
+	
+	NSMutableArray* previousFrameInfos;
     
     // ian: we need another output texture to support transitions
     GLuint secondOutputTexture;
@@ -160,20 +158,26 @@
 
 - (void)startProcessing
 {
+	previousFrameInfos = [[NSMutableArray alloc] init];
+	for (int i = 0; i < 2; i++) {
+		NSMutableDictionary* previousFrameInfo = [NSMutableDictionary dictionaryWithCapacity:5];
+		[previousFrameInfo setObject:[NSValue valueWithCMTime:kCMTimeZero] forKey:@"previousFrameTime"];
+		[previousFrameInfo setObject:[NSNumber numberWithDouble:CFAbsoluteTimeGetCurrent()] forKey:@"previousActualFrameTime"];
+		[previousFrameInfo setObject:[NSValue valueWithCMTime:kCMTimeZero] forKey:@"previousDisplayFrameTime"];
+		CMSampleBufferRef previousSampleBufferRef = (__bridge CMSampleBufferRef)([previousFrameInfo objectForKey:@"previousSampleBufferRef"]);
+		if (previousSampleBufferRef) {
+			CMSampleBufferInvalidate(previousSampleBufferRef);
+			//CFRelease(previousSampleBufferRef);
+			[previousFrameInfo removeObjectForKey:@"previousSampleBufferRef"];
+		}
+		[previousFrameInfos addObject:previousFrameInfo];
+	}
+	
     if(self.url == nil)
     {
       [self processAsset];
       return;
     }
-    
-    previousFrameTime = kCMTimeZero;
-    previousActualFrameTime = CFAbsoluteTimeGetCurrent();
-	previousDisplayFrameTime = kCMTimeZero;
-	if (previousSampleBufferRef) {
-		CMSampleBufferInvalidate(previousSampleBufferRef);
-		CFRelease(previousSampleBufferRef);
-		previousSampleBufferRef = NULL;
-	}
 	
     NSDictionary *inputOptions = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
     AVURLAsset *inputAsset = [[AVURLAsset alloc] initWithURL:self.url options:inputOptions];    
@@ -287,7 +291,7 @@
 	//read all video tracks!
     int transitionIndex = 0;
 	for (AVAssetReaderTrackOutput* output in reader.outputs) {
-		if (output.mediaType == AVMediaTypeVideo) {
+		if ([output.mediaType isEqualToString:AVMediaTypeVideo]) {
 			[self readNextVideoFrameFromOutput:output transitionIndex:transitionIndex];
             transitionIndex += 1;
 		}
@@ -298,8 +302,6 @@
 {
 	[readerLock lock];
 	
-	NSLog(@"trackID: %d", readerVideoTrackOutput.track.trackID);
-	
 	AVAssetReaderStatus readerStatus = reader.status;
 	
     if (readerStatus == AVAssetReaderStatusReading)
@@ -308,6 +310,12 @@
 		[readerLock unlock];
         if (sampleBufferRef)
         {
+			NSMutableDictionary* previousFrameInfo = [previousFrameInfos objectAtIndex:transitionIndex];
+			CMTime previousFrameTime = [[previousFrameInfo objectForKey:@"previousFrameTime"] CMTimeValue];
+			CMTime previousDisplayFrameTime = [[previousFrameInfo objectForKey:@"previousDisplayFrameTime"] CMTimeValue];
+			CFAbsoluteTime previousActualFrameTime = [[previousFrameInfo objectForKey:@"previousActualFrameTime"] doubleValue];
+			CMSampleBufferRef previousSampleBufferRef = (__bridge CMSampleBufferRef)([previousFrameInfo objectForKey:@"previousSampleBufferRef"]);
+			
 			// Do this outside of the video processing queue to not slow that down while waiting
 			CMTime currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBufferRef);
 			CMTime differenceFromLastFrame = CMTimeSubtract(currentSampleTime, previousFrameTime);
@@ -357,6 +365,12 @@
 			}
 			previousSampleBufferRef = sampleBufferRef;
 			previousFrameTime = currentSampleTime;
+			
+			[previousFrameInfo setObject:[NSValue valueWithCMTime:previousFrameTime] forKey:@"previousFrameTime"];
+			[previousFrameInfo setObject:[NSValue valueWithCMTime:previousDisplayFrameTime] forKey:@"previousDisplayFrameTime"];
+			[previousFrameInfo setObject:[NSNumber numberWithDouble:previousActualFrameTime] forKey:@"previousActualFrameTime"];
+			[previousFrameInfo setObject:(__bridge id)(previousSampleBufferRef) forKey:@"previousSampleBufferRef"];
+			[previousFrameInfos replaceObjectAtIndex:transitionIndex withObject:previousFrameInfo];
         }
         else
         {
@@ -445,7 +459,12 @@
             return;
         }
         
-        outputTexture = CVOpenGLESTextureGetName(texture);
+		if (transitionIndex == 0) {
+			outputTexture = CVOpenGLESTextureGetName(texture);
+		}
+		else {
+			secondOutputTexture = CVOpenGLESTextureGetName(texture);
+		}
         //        glBindTexture(CVOpenGLESTextureGetTarget(texture), outputTexture);
         glBindTexture(GL_TEXTURE_2D, (transitionIndex == 0) ? outputTexture : secondOutputTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -455,8 +474,12 @@
         
         if (self.transitionFilter)
         {
+			//printf("%d\n", transitionIndex);
+			if (transitionIndex == 0) {
+				[self.transitionFilter updateTransition:CMTimeGetSeconds(currentSampleTime)];
+			}
             [self.transitionFilter setInputSize:CGSizeMake(bufferWidth, bufferHeight) atIndex:transitionIndex];
-            [self.transitionFilter setInputTexture:outputTexture atIndex:transitionIndex];
+            [self.transitionFilter setInputTexture:((transitionIndex == 0) ? outputTexture : secondOutputTexture) atIndex:transitionIndex];
             [self.transitionFilter newFrameReadyAtTime:currentSampleTime atIndex:transitionIndex];
         }
         else
@@ -494,6 +517,7 @@
         if (self.transitionFilter)
         {
             [self.transitionFilter setInputSize:currentSize atIndex:transitionIndex];
+			[self.transitionFilter updateTransition:CMTimeGetSeconds(currentSampleTime)];
             [self.transitionFilter newFrameReadyAtTime:currentSampleTime atIndex:transitionIndex];
         }
         else
