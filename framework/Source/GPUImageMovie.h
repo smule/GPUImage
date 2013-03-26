@@ -9,8 +9,8 @@
 @end
 
 @protocol TransitionFilterDelegate <NSObject>
-- (void)startTransition:(float)startTime forDuration:(float)duration reverse:(BOOL)reverse;
 - (void)updateTransition:(float)time;
+- (void)startTransition:(float)startTime forDuration:(float)duration reverse:(BOOL)reverse;
 @end
 
 /** Source object for filtering movies
