@@ -328,7 +328,7 @@
 			CMTime previousFrameTime = [[previousFrameInfo objectForKey:@"previousFrameTime"] CMTimeValue];
 			CMTime previousDisplayFrameTime = [[previousFrameInfo objectForKey:@"previousDisplayFrameTime"] CMTimeValue];
 			CFAbsoluteTime previousActualFrameTime = [[previousFrameInfo objectForKey:@"previousActualFrameTime"] doubleValue];
-			CMSampleBufferRef previousSampleBufferRef = (__bridge CMSampleBufferRef)([previousFrameInfo objectForKey:@"previousSampleBufferRef"]);
+			CMSampleBufferRef previousSampleBufferRef = (CMSampleBufferRef)CFBridgingRetain([previousFrameInfo objectForKey:@"previousSampleBufferRef"]);
 			
 			// Do this outside of the video processing queue to not slow that down while waiting
 			CMTime currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBufferRef);
@@ -383,7 +383,7 @@
 			[previousFrameInfo setObject:[NSValue valueWithCMTime:previousFrameTime] forKey:@"previousFrameTime"];
 			[previousFrameInfo setObject:[NSValue valueWithCMTime:previousDisplayFrameTime] forKey:@"previousDisplayFrameTime"];
 			[previousFrameInfo setObject:[NSNumber numberWithDouble:previousActualFrameTime] forKey:@"previousActualFrameTime"];
-			[previousFrameInfo setObject:(__bridge id)(previousSampleBufferRef) forKey:@"previousSampleBufferRef"];
+			[previousFrameInfo setObject:(id)CFBridgingRelease(previousSampleBufferRef) forKey:@"previousSampleBufferRef"];
 			[previousFrameInfos replaceObjectAtIndex:transitionIndex withObject:previousFrameInfo];
         }
         else
@@ -491,9 +491,9 @@
         if (self.transitionFilter)
         {
 			//printf("%d\n", transitionIndex);
-			if (transitionIndex == 0) {
+//			if (transitionIndex == 0) {
 				[self.transitionFilter updateTransition:CMTimeGetSeconds(currentSampleTime)];
-			}
+//			}
             [self.transitionFilter setInputSize:CGSizeMake(bufferWidth, bufferHeight) atIndex:transitionIndex];
             [self.transitionFilter setInputTexture:((transitionIndex == 0) ? outputTexture : secondOutputTexture) atIndex:transitionIndex];
             [self.transitionFilter newFrameReadyAtTime:currentSampleTime atIndex:transitionIndex];
