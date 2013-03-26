@@ -10,6 +10,8 @@
 	NSLock* readerLock;
 	
 	NSMutableArray* previousFrameInfos;
+	NSMutableArray* trackDoneReading;
+	
     
     // ian: we need another output texture to support transitions
     GLuint secondOutputTexture;
@@ -173,6 +175,11 @@
 		[previousFrameInfos addObject:previousFrameInfo];
 	}
 	
+	trackDoneReading = [[NSMutableArray alloc] init];
+	for (int i = 0; i < 2; i++) {
+		[trackDoneReading addObject:@(NO)];
+	}
+	
     if(self.url == nil)
     {
       [self processAsset];
@@ -290,11 +297,18 @@
 - (void)readNextVideoFrame {
 	//read all video tracks!
     int transitionIndex = 0;
+	BOOL shouldEnd = YES;
 	for (AVAssetReaderTrackOutput* output in reader.outputs) {
 		if ([output.mediaType isEqualToString:AVMediaTypeVideo]) {
-			[self readNextVideoFrameFromOutput:output transitionIndex:transitionIndex];
+			if (![[trackDoneReading objectAtIndex:transitionIndex] boolValue]) {
+				[self readNextVideoFrameFromOutput:output transitionIndex:transitionIndex];
+				shouldEnd = NO;
+			}
             transitionIndex += 1;
 		}
+	}
+	if (shouldEnd) { //if all tracks are done reading...
+		[self endProcessing];
 	}
 }
 
@@ -374,8 +388,10 @@
         }
         else
         {
-            videoEncodingIsFinished = YES;
-            [self endProcessing];
+			//other tracks could be still going, wait for AVAssetWriterStatusCompleted
+//            videoEncodingIsFinished = YES;
+//            [self endProcessing];
+			[trackDoneReading replaceObjectAtIndex:transitionIndex withObject:@(YES)];
         }
     }
     else if (synchronizedMovieWriter != nil)
