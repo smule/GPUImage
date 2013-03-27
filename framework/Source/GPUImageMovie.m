@@ -362,7 +362,7 @@
             // ian: have the linked overlay process a frame at our current time
             if (self.linkedOverlay)
             {
-                [self.linkedOverlay processFrameAtTargetTime:currentSampleTime];
+                [self.linkedOverlay processFrameAtTargetTime:previousFrameTime];
             }
             
 			//mtg: filter out frames that are displayed too quickly that we'll never realistically display them
