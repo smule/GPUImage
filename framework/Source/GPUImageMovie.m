@@ -11,7 +11,6 @@
 	
 	NSMutableArray* previousFrameInfos;
 	NSMutableArray* trackDoneReading;
-	
     
     // ian: we need another output texture to support transitions
     GLuint secondOutputTexture;
@@ -297,19 +296,37 @@
 - (void)readNextVideoFrame {
 	//read all video tracks!
     int transitionIndex = 0;
+    int trackIndex = 0;
 	BOOL shouldEnd = YES;
+    CMTime earliestPreviousFrameTime = kCMTimePositiveInfinity;
+    int transitionIndexToProcess;
+    int trackIndexToProcess;
 	for (AVAssetReaderTrackOutput* output in reader.outputs) {
 		if ([output.mediaType isEqualToString:AVMediaTypeVideo]) {
 			if (![[trackDoneReading objectAtIndex:transitionIndex] boolValue]) {
-				[self readNextVideoFrameFromOutput:output transitionIndex:transitionIndex];
+                // check if this track has the earliest previous frame
+                NSMutableDictionary* previousFrameInfo = [previousFrameInfos objectAtIndex:transitionIndex];
+                CMTime previousFrameTime = [[previousFrameInfo objectForKey:@"previousFrameTime"] CMTimeValue];
+                if (CMTimeCompare(previousFrameTime, earliestPreviousFrameTime) < 0)
+                {
+                    earliestPreviousFrameTime = previousFrameTime;
+                    transitionIndexToProcess = transitionIndex;
+                    trackIndexToProcess = trackIndex;
+                }
+
 				shouldEnd = NO;
 			}
             transitionIndex += 1;
 		}
+        trackIndex += 1;
 	}
 	if (shouldEnd) { //if all tracks are done reading...
 		[self endProcessing];
 	}
+    else
+    {
+        [self readNextVideoFrameFromOutput:[reader.outputs objectAtIndex:trackIndexToProcess] transitionIndex:transitionIndexToProcess];
+    }
 }
 
 - (void)readNextVideoFrameFromOutput:(AVAssetReaderTrackOutput *)readerVideoTrackOutput transitionIndex:(int)transitionIndex;
@@ -517,7 +534,11 @@
         // Flush the CVOpenGLESTexture cache and release the texture
         CVOpenGLESTextureCacheFlush(coreVideoTextureCache, 0);
         CFRelease(texture);
-        outputTexture = 0;        
+        
+        if (transitionIndex == 0)
+            outputTexture = 0;
+        else
+            secondOutputTexture = 0;
     }
     else
     {
