@@ -249,6 +249,8 @@
     if (!didStart)
     {
 		NSLog(@"Error reading from file at URL: %@", weakSelf.url);
+		[readerLock unlock];
+		[self endProcessing];
         return;
     }
     
