@@ -239,19 +239,19 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
     if ((hasReceivedFirstFrame && hasReceivedSecondFrame) || updatedMovieFrameOppositeStillImage)
     {
 		if (firstFrameCheckDisabled && secondFrameCheckDisabled) {
-//			//whichever just came in
-//			[super newFrameReadyAtTime:(textureIndex == 0 ? firstFrameTime : secondFrameTime) atIndex:0];
+			//whichever just came in
+			[super newFrameReadyAtTime:frameTime atIndex:0];
 			
 			//whichever is valid and later!
-			if (CMTIME_IS_INVALID(firstFrameTime)) {
-				[super newFrameReadyAtTime:secondFrameTime atIndex:0];
-			}
-			else if (CMTIME_IS_INVALID(secondFrameTime)) {
-				[super newFrameReadyAtTime:firstFrameTime atIndex:0];
-			}
-			else {
-				[super newFrameReadyAtTime:(CMTIME_COMPARE_INLINE(firstFrameTime, >, secondFrameTime) ? firstFrameTime : secondFrameTime) atIndex:0];
-			}
+//			if (CMTIME_IS_INVALID(firstFrameTime)) {
+//				[super newFrameReadyAtTime:secondFrameTime atIndex:0];
+//			}
+//			else if (CMTIME_IS_INVALID(secondFrameTime)) {
+//				[super newFrameReadyAtTime:firstFrameTime atIndex:0];
+//			}
+//			else {
+//				[super newFrameReadyAtTime:(CMTIME_COMPARE_INLINE(firstFrameTime, >, secondFrameTime) ? firstFrameTime : secondFrameTime) atIndex:0];
+//			}
 		}
 		else {
 			[super newFrameReadyAtTime:firstFrameTime atIndex:0];
