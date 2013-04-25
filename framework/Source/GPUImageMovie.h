@@ -3,7 +3,7 @@
 #import "GPUImageOpenGLESContext.h"
 #import "GPUImageOutput.h"
 
-@protocol LinkedOverlayDelegate <NSObject>
+@protocol LinkedOverlay <NSObject>
 - (void)processFrameAtTargetTime:(CMTime)targetTime;
 @end
 
