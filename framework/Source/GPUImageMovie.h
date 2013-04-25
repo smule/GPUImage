@@ -31,7 +31,7 @@
 // ian: adding a linked overlay property here
 //      Basically, we will inform the linked overlay of our current time every time we process a frame.
 //      The overlay is responsible for staying in sync with us.
-@property(readwrite, assign) id<LinkedOverlayDelegate> linkedOverlay;
+@property(readwrite, assign) id<LinkedOverlay> linkedOverlay;
 
 // ian: adding a transition filter property here
 @property(readwrite, retain) GPUImageTwoInputFilter<TransitionFilterDelegate> *transitionFilter;
