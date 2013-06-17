@@ -297,7 +297,9 @@ NSString *const kGPUImageToneCurveFragmentShaderString = SHADER_STRING
     
     // Is [points count] equal to [sdA count]?
 //    int n = [points count];
-    int n = [sdA count];
+    NSInteger n = [sdA count];
+    if (n < 1)
+        return nil;
     double sd[n];
     
     // From NSMutableArray to sd[n];

@@ -301,8 +301,8 @@
     int trackIndex = 0;
 	BOOL shouldEnd = YES;
     CMTime earliestPreviousFrameTime = kCMTimePositiveInfinity;
-    int transitionIndexToProcess;
-    int trackIndexToProcess;
+    int transitionIndexToProcess = -1;
+    int trackIndexToProcess = -1;
 	for (AVAssetReaderTrackOutput* output in reader.outputs) {
 		if ([output.mediaType isEqualToString:AVMediaTypeVideo]) {
 			if (![[trackDoneReading objectAtIndex:transitionIndex] boolValue]) {
@@ -327,7 +327,8 @@
 	}
     else
     {
-        [self readNextVideoFrameFromOutput:[reader.outputs objectAtIndex:trackIndexToProcess] transitionIndex:transitionIndexToProcess];
+        if ((transitionIndexToProcess >= 0) && (trackIndexToProcess >= 0))
+            [self readNextVideoFrameFromOutput:[reader.outputs objectAtIndex:trackIndexToProcess] transitionIndex:transitionIndexToProcess];
     }
 }
 
