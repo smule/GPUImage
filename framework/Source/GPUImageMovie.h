@@ -36,9 +36,6 @@
 // ian: adding a transition filter property here
 @property(readwrite, retain) GPUImageTwoInputFilter<TransitionFilterDelegate> *transitionFilter;
 
-// ian: adding a transition filter property here
-@property(readwrite, retain) GPUImageTwoInputFilter<TransitionFilterDelegate> *transitionFilter;
-
 @property float hardFrameDifferenceLimit;
 
 /// @name Initialization and teardown
