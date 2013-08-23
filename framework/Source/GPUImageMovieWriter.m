@@ -263,9 +263,16 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 	
 	runSynchronouslyOnVideoProcessingQueue(^{
 		if (assetWriter.status == AVAssetWriterStatusWriting) {
-			[assetWriterVideoInput markAsFinished];
-			[assetWriterAudioInput markAsFinished];
-			[assetWriter finishWriting];
+//			NSLog(@"about to mark");
+//			[assetWriterVideoInput markAsFinished];
+//			[assetWriterAudioInput markAsFinished];
+//			NSLog(@"about to finish writing");
+//			[assetWriter finishWriting];
+//			[assetWriter finishWritingWithCompletionHandler:^{
+//				NSLog(@"finished writing!");
+//			}];
+			NSLog(@"finished writing!");
+			
 		}
 		
 		NSLog(@"done writing: status %d", assetWriter.status);
