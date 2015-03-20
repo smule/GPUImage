@@ -229,7 +229,7 @@ NSString *const kGPUImageToneCurveFragmentShaderString = SHADER_STRING
         NSArray *sortedPoints = [points sortedArrayUsingComparator:^(id a, id b) {
             float x1 = [(NSValue *)a CGPointValue].x;
             float x2 = [(NSValue *)b CGPointValue].x;            
-            return x1 > x2;
+            return (NSComparisonResult)(x1 > x2);
         }];
                 
         // Convert from (0, 1) to (0, 255).
