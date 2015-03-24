@@ -14,10 +14,19 @@
 // Total number of filters a user can select
 + (NSUInteger)numFilters;
 
-// Server - return one filter
++ (NSString*)filterNameAtIndex:(NSUInteger)index;
+
+/*
+ * Server
+ */
+
 + (GPUImageFilterGroup*)filterGroupAtIndex:(NSUInteger)index;
 
-// Client - return two combined filters for swiping
+/*
+ * Client
+ */
+
+// Return two combined filters for swiping
 - (GPUImageFilterGroup*)splitFilterGroupAtIndex:(NSUInteger)index;
 
 @end

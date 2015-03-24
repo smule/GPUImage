@@ -37,6 +37,23 @@ typedef enum FILTER_TYPE : NSUInteger{
     return 8;
 }
 
++ (NSString*)filterNameAtIndex:(NSUInteger)index
+{
+    return [VideoFilterManager filterNames][index];
+}
+
++ (NSArray*)filterNames
+{
+    return @[@"Normal",
+             @"Black and White",
+             @"Sepia",
+             @"Vintage",
+             @"Face",
+             @"Turkey",
+             @"Halftone",
+             @"Pink Edge"];
+}
+
 + (GPUImageFilterGroup*)filterGroupAtIndex:(NSUInteger)index
 {
     GPUImageFilterGroup *group = [[GPUImageFilterGroup alloc] init];
