@@ -25,6 +25,9 @@
     BOOL isFullYUVRange;
 
     int imageBufferWidth, imageBufferHeight;
+    
+    // Store last frame so we can filter while paused
+    CVPixelBufferRef lastFrame;
 }
 
 - (void)processAsset;
@@ -335,15 +338,34 @@
 
 	CMTime outputItemTime = [playerItemOutput itemTimeForHostTime:nextVSync];
 
-	if ([playerItemOutput hasNewPixelBufferForItemTime:outputItemTime]) {
+    if ([playerItemOutput hasNewPixelBufferForItemTime:outputItemTime]) {
         __unsafe_unretained GPUImageMovie *weakSelf = self;
-		CVPixelBufferRef pixelBuffer = [playerItemOutput copyPixelBufferForItemTime:outputItemTime itemTimeForDisplay:NULL];
+        CVPixelBufferRef pixelBuffer = [playerItemOutput copyPixelBufferForItemTime:outputItemTime itemTimeForDisplay:NULL];
         if( pixelBuffer )
+        {
+            if(lastFrame)
+            {
+                CFRelease(lastFrame);
+            }
+            
+            lastFrame = pixelBuffer;
+            CFRetain(lastFrame);
+            
             runSynchronouslyOnVideoProcessingQueue(^{
                 [weakSelf processMovieFrame:pixelBuffer withSampleTime:outputItemTime];
                 CFRelease(pixelBuffer);
             });
-	}
+        }
+    }
+    
+    // Continue filtering while paused
+    else
+    {
+        __unsafe_unretained GPUImageMovie *weakSelf = self;
+        runSynchronouslyOnVideoProcessingQueue(^{
+            [weakSelf processMovieFrame:lastFrame withSampleTime:outputItemTime];
+        });
+    }
 }
 
 - (BOOL)readNextVideoFrameFromOutput:(AVAssetReaderOutput *)readerVideoTrackOutput;
