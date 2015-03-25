@@ -79,22 +79,27 @@ typedef enum FILTER_TYPE : NSUInteger{
 + (NSArray*)filtersWithIndex:(NSUInteger)index
 {
     switch (index) {
-        case FILTER_TYPE_NONE:
+        // Put the final filter here for circular scrolling
+        case 0:
+        {
+            return [NSArray arrayWithObjects:[[StrumPinkEdgeFilter alloc] init], nil];
+        }
+        case 1:
         {
             return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
         }
-        case FILTER_TYPE_BLACKNWHITE:
+        case 2:
         {
             return [NSArray arrayWithObjects:[[GPUImageGrayscaleFilter alloc] init], nil];
         }
-        case FILTER_TYPE_SEPIA:
+        case 3:
         {
             GPUImageGaussianBlurFilter *blur = [[GPUImageGaussianBlurFilter alloc] init];
             [blur setBlurRadiusInPixels:5.0];
             GPUImageSepiaFilter *sepia = [[GPUImageSepiaFilter alloc] init];
             return [NSArray arrayWithObjects:sepia, blur, nil];
         }
-        case FILTER_TYPE_VINTAGE:
+        case 4:
         {
             GPUImageSaturationFilter *saturation = [[GPUImageSaturationFilter alloc] init];
             [saturation setSaturation:.8];
@@ -102,7 +107,7 @@ typedef enum FILTER_TYPE : NSUInteger{
             [contrast setContrast:.8];
             return [NSArray arrayWithObjects:saturation, contrast, nil];
         }
-        case FILTER_TYPE_FACE:
+        case 5:
         {
             GPUImageExposureFilter *exposure = [[GPUImageExposureFilter alloc] init];
             [exposure setExposure:1.0];
@@ -111,19 +116,23 @@ typedef enum FILTER_TYPE : NSUInteger{
             GPUImageVignetteFilter *vignette = [[GPUImageVignetteFilter alloc] init];
             return [NSArray arrayWithObjects:exposure, contrast, vignette, nil];
         }
-        case FILTER_TYPE_TURKEY:
+        case 6:
         {
             GPUImageGaussianBlurFilter *blur = [[GPUImageGaussianBlurFilter alloc] init];
             [blur setBlurRadiusInPixels:8.0];
             return [NSArray arrayWithObjects:blur, nil];
         }
-        case FILTER_TYPE_HALFTONE:
+        case 7:
         {
             return [NSArray arrayWithObjects:[[GPUImageHalftoneFilter alloc] init], nil];
         }
-        case FILTER_TYPE_PINKEDGE:
+        case 8:
         {
             return [NSArray arrayWithObjects:[[StrumPinkEdgeFilter alloc] init], nil];
+        }
+        case 9:
+        {
+            return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
         }
         default:
         {
@@ -140,9 +149,9 @@ typedef enum FILTER_TYPE : NSUInteger{
     if(self)
     {
         
-        self.filters = [[NSMutableArray alloc] initWithCapacity:[VideoFilterManager numFilters]];
+        self.filters = [[NSMutableArray alloc] initWithCapacity:[VideoFilterManager numFilters]+2];
         
-        for (int i = 0; i < [VideoFilterManager numFilters]; i++) {
+        for (int i = 0; i < [VideoFilterManager numFilters]+2; i++) {
             self.filters[i] = [[GPUImageFilterGroup alloc] init];
             
             // Chain left filters together
