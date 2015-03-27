@@ -42,29 +42,23 @@ typedef enum FILTER_TYPE : NSUInteger{
     return [VideoFilterManager filterNames][index];
 }
 
-+ (NSString*)filterIDAtIndex:(NSUInteger)index
-{
-    return [[[VideoFilterManager filterNames][index] stringByReplacingOccurrencesOfString:@" " withString:@"_"] lowercaseString];
-}
-
 + (NSArray*)filterNames
 {
-    return @[@"Normal",
-             @"Black and White",
-             @"Sepia",
-             @"Vintage",
-             @"Face",
-             @"Turkey",
-             @"Halftone",
-             @"Pink Edge"];
+    return @[@"normal",
+             @"bw",
+             @"sepia",
+             @"vintge",
+             @"face",
+             @"turkey",
+             @"half",
+             @"pink"];
 }
 
-+ (GPUImageFilterGroup*)filterGroupWithID:(NSString *)filterID
++ (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
 {
-    NSString *filterName = [filterID stringByReplacingOccurrencesOfString:@"_" withString:@" "];
     for (int i = 0; i < [VideoFilterManager filterNames].count; i++) {
         NSString *name = [VideoFilterManager filterNames][i];
-        if([name caseInsensitiveCompare:filterName]) {
+        if([name isEqualToString:filterName]) {
             return [VideoFilterManager filterGroupAtIndex:i+1];
         }
     }
