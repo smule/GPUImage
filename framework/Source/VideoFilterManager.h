@@ -14,13 +14,17 @@
 // Total number of filters a user can select
 + (NSUInteger)numFilters;
 
+// Filter name for display purposes
 + (NSString*)filterNameAtIndex:(NSUInteger)index;
+
+// Filter name with spaces removed
++ (NSString*)filterIDAtIndex:(NSUInteger)index;
 
 /*
  * Server
  */
 
-+ (GPUImageFilterGroup*)filterGroupAtIndex:(NSUInteger)index;
++ (GPUImageFilterGroup*)filterGroupWithID:(NSString*)filterID;
 
 /*
  * Client

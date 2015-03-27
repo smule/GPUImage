@@ -34,12 +34,17 @@ typedef enum FILTER_TYPE : NSUInteger{
 
 + (NSUInteger)numFilters
 {
-    return 8;
+    return [VideoFilterManager filterNames].count;
 }
 
 + (NSString*)filterNameAtIndex:(NSUInteger)index
 {
     return [VideoFilterManager filterNames][index];
+}
+
++ (NSString*)filterIDAtIndex:(NSUInteger)index
+{
+    return [[[VideoFilterManager filterNames][index] stringByReplacingOccurrencesOfString:@" " withString:@"_"] lowercaseString];
 }
 
 + (NSArray*)filterNames
@@ -52,6 +57,20 @@ typedef enum FILTER_TYPE : NSUInteger{
              @"Turkey",
              @"Halftone",
              @"Pink Edge"];
+}
+
++ (GPUImageFilterGroup*)filterGroupWithID:(NSString *)filterID
+{
+    NSString *filterName = [filterID stringByReplacingOccurrencesOfString:@"_" withString:@" "];
+    for (int i = 0; i < [VideoFilterManager filterNames].count; i++) {
+        NSString *name = [VideoFilterManager filterNames][i];
+        if([name caseInsensitiveCompare:filterName]) {
+            return [VideoFilterManager filterGroupAtIndex:i+1];
+        }
+    }
+    
+    // ID does not match any filter name
+    return [VideoFilterManager filterGroupAtIndex:1];
 }
 
 + (GPUImageFilterGroup*)filterGroupAtIndex:(NSUInteger)index
@@ -79,9 +98,9 @@ typedef enum FILTER_TYPE : NSUInteger{
 + (NSArray*)filtersWithIndex:(NSUInteger)index
 {
     switch (index) {
-        // Put the final filter here for circular scrolling
         case 0:
         {
+            // Put the final filter here for circular scrolling
             return [NSArray arrayWithObjects:[[StrumPinkEdgeFilter alloc] init], nil];
         }
         case 1:
@@ -132,6 +151,7 @@ typedef enum FILTER_TYPE : NSUInteger{
         }
         case 9:
         {
+            // Put the first filter here for circular scrolling
             return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
         }
         default:
