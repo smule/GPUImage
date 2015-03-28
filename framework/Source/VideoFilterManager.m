@@ -8,19 +8,6 @@
 
 #import "VideoFilterManager.h"
 #import "GPUImage.h"
-#import "GPUImageSplitFilter.h"
-#import "StrumPinkEdgeFilter.h"
-
-typedef enum FILTER_TYPE : NSUInteger{
-    FILTER_TYPE_NONE,
-    FILTER_TYPE_BLACKNWHITE,
-    FILTER_TYPE_SEPIA,
-    FILTER_TYPE_VINTAGE,
-    FILTER_TYPE_FACE,
-    FILTER_TYPE_TURKEY,
-    FILTER_TYPE_HALFTONE,
-    FILTER_TYPE_PINKEDGE
-} FILTER_TYPE;
 
 @interface VideoFilterManager ()
 
@@ -95,7 +82,9 @@ typedef enum FILTER_TYPE : NSUInteger{
         case 0:
         {
             // Put the final filter here for circular scrolling
-            return [NSArray arrayWithObjects:[[StrumPinkEdgeFilter alloc] init], nil];
+            GPUImageSketchFilter *sketch = [[GPUImageSketchFilter alloc] init];
+            [sketch setEdgeStrength:.75];
+            return [NSArray arrayWithObjects:sketch, nil];
         }
         case 1:
         {
@@ -103,37 +92,32 @@ typedef enum FILTER_TYPE : NSUInteger{
         }
         case 2:
         {
-            return [NSArray arrayWithObjects:[[GPUImageGrayscaleFilter alloc] init], nil];
+            GPUImageGrayscaleFilter *bw = [[GPUImageGrayscaleFilter alloc] init];
+            GPUImageLevelsFilter *levels = [[GPUImageLevelsFilter alloc] init];
+            [levels setRedMin:.1 gamma:1.0 max:1.0 minOut:0.0 maxOut:1.0];
+            [levels setGreenMin:.1 gamma:1.0 max:1.0 minOut:0.0 maxOut:1.0];
+            [levels setBlueMin:.1 gamma:1.0 max:1.0 minOut:0.0 maxOut:1.0];
+            return [NSArray arrayWithObjects:bw, levels, nil];
         }
         case 3:
         {
-            GPUImageGaussianBlurFilter *blur = [[GPUImageGaussianBlurFilter alloc] init];
-            [blur setBlurRadiusInPixels:5.0];
-            GPUImageSepiaFilter *sepia = [[GPUImageSepiaFilter alloc] init];
-            return [NSArray arrayWithObjects:sepia, blur, nil];
+            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_sepia.png"];
+            return [NSArray arrayWithObjects:sepia, nil];
         }
         case 4:
         {
-            GPUImageSaturationFilter *saturation = [[GPUImageSaturationFilter alloc] init];
-            [saturation setSaturation:.8];
-            GPUImageContrastFilter *contrast = [[GPUImageContrastFilter alloc] init];
-            [contrast setContrast:.8];
-            return [NSArray arrayWithObjects:saturation, contrast, nil];
+            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_vintage.png"];
+            return [NSArray arrayWithObjects:sepia, nil];
         }
         case 5:
         {
-            GPUImageExposureFilter *exposure = [[GPUImageExposureFilter alloc] init];
-            [exposure setExposure:1.0];
-            GPUImageContrastFilter *contrast = [[GPUImageContrastFilter alloc] init];
-            [contrast setContrast:1.1];
-            GPUImageVignetteFilter *vignette = [[GPUImageVignetteFilter alloc] init];
-            return [NSArray arrayWithObjects:exposure, contrast, vignette, nil];
+            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_selfie.png"];
+            return [NSArray arrayWithObjects:sepia, nil];
         }
         case 6:
         {
-            GPUImageGaussianBlurFilter *blur = [[GPUImageGaussianBlurFilter alloc] init];
-            [blur setBlurRadiusInPixels:8.0];
-            return [NSArray arrayWithObjects:blur, nil];
+            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_fightclub.png"];
+            return [NSArray arrayWithObjects:sepia, nil];
         }
         case 7:
         {
@@ -141,7 +125,9 @@ typedef enum FILTER_TYPE : NSUInteger{
         }
         case 8:
         {
-            return [NSArray arrayWithObjects:[[StrumPinkEdgeFilter alloc] init], nil];
+            GPUImageSketchFilter *sketch = [[GPUImageSketchFilter alloc] init];
+            [sketch setEdgeStrength:.75];
+            return [NSArray arrayWithObjects:sketch, nil];
         }
         case 9:
         {
