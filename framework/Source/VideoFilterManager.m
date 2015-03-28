@@ -35,10 +35,10 @@
              @"bw",
              @"sepia",
              @"vintge",
-             @"face",
-             @"turkey",
-             @"half",
-             @"pink"];
+             @"selfie",
+             @"fight",
+             @"comic",
+             @"sketch"];
 }
 
 + (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
