@@ -9,7 +9,9 @@
 
 @end
 
-@implementation GPUImageContext
+@implementation GPUImageContext {
+    CVOpenGLTextureCacheRef _coreVideoTextureCache;
+}
 
 @synthesize context = _context;
 @synthesize currentShaderProgram = _currentShaderProgram;
@@ -244,6 +246,45 @@ static void *openGLESContextQueueKey;
     }
     
     return _framebufferCache;
+}
+
+
+- (CVOpenGLTextureCacheRef)coreVideoTextureCache;
+{
+    if (_coreVideoTextureCache == NULL)
+    {
+        CGDirectDisplayID display = CGMainDisplayID ();
+       CGOpenGLDisplayMask myDisplayMask = CGDisplayIDToOpenGLDisplayMask (display);
+
+       	// Check capabilities of display represented by display mask
+       	CGLPixelFormatAttribute attribs[] = {kCGLPFADisplayMask,
+       		myDisplayMask,
+       		0};
+       	CGLPixelFormatObj pixelFormat = NULL;
+       	GLint numPixelFormats = 0;
+       	CGLContextObj myCGLContext = 0;
+
+       	CGLChoosePixelFormat (attribs, &pixelFormat, &numPixelFormats);
+        /*
+       	if (pixelFormat) {
+       		CGLCreateContext (pixelFormat, NULL, &myCGLContext);
+       		CGLDestroyPixelFormat (pixelFormat);
+       		_previousContext = CGLGetCurrentContext();
+       		CGLRetainContext(_previousContext);
+       		CGLSetCurrentContext (myCGLContext);
+       		_currentContext = myCGLContext;
+       		CGLRetainContext(_currentContext);
+       	}
+         */
+       	//-- Create CVOpenGLTextureCacheRef for optimal CVPixelBufferRef to GLES texture conversion.
+           CVReturn err = CVOpenGLTextureCacheCreate(kCFAllocatorDefault, NULL, myCGLContext, pixelFormat, NULL, &_coreVideoTextureCache);
+           if (err != noErr) {
+               NSLog(@"Error at CVOpenGLESTextureCacheCreate %d", err);
+           }
+
+    }
+
+    return _coreVideoTextureCache;
 }
 
 @end

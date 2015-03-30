@@ -34,6 +34,8 @@ typedef enum { kGPUImageNoRotation, kGPUImageRotateLeft, kGPUImageRotateRight, k
 
 - (void)useSharegroup:(CGLShareGroupObj *)sharegroup;
 
+- (CVOpenGLTextureCacheRef)coreVideoTextureCache;
+
 // Manage fast texture upload
 + (BOOL)supportsFastTextureUpload;
 
