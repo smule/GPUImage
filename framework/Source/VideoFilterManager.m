@@ -29,6 +29,16 @@
     return [VideoFilterManager filterNames][index];
 }
 
++ (BOOL)isVIPOnlyAtIndex:(NSUInteger)index
+{
+    if(index == 0) {
+        return NO;
+    }
+    else {
+        return YES;
+    }
+}
+
 + (NSArray*)filterNames
 {
     return @[@"normal",
