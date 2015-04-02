@@ -47,8 +47,7 @@
              @"vintge",
              @"selfie",
              @"fight",
-             @"comic",
-             @"sketch"];
+             @"comic"];
 }
 
 + (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
@@ -92,9 +91,7 @@
         case 0:
         {
             // Put the final filter here for circular scrolling
-            GPUImageSketchFilter *sketch = [[GPUImageSketchFilter alloc] init];
-            [sketch setEdgeStrength:.75];
-            return [NSArray arrayWithObjects:sketch, nil];
+            return [NSArray arrayWithObjects:[[GPUImageHalftoneFilter alloc] init], nil];
         }
         case 1:
         {
@@ -134,12 +131,6 @@
             return [NSArray arrayWithObjects:[[GPUImageHalftoneFilter alloc] init], nil];
         }
         case 8:
-        {
-            GPUImageSketchFilter *sketch = [[GPUImageSketchFilter alloc] init];
-            [sketch setEdgeStrength:.75];
-            return [NSArray arrayWithObjects:sketch, nil];
-        }
-        case 9:
         {
             // Put the first filter here for circular scrolling
             return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
