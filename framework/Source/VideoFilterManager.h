@@ -17,6 +17,9 @@
 // Filter name to send to server and map to localized string
 + (NSString*)filterNameAtIndex:(NSUInteger)index;
 
+// Filter index based on filter name
++ (NSUInteger)filterIndexWithName:(NSString *)filterName;
+
 // Check if fiter at specific index is vip
 + (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
 
