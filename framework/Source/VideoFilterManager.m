@@ -31,7 +31,15 @@
 
 + (NSUInteger)filterIndexWithName:(NSString *)filterName
 {
-    return [[VideoFilterManager filterNames] indexOfObject:filterName];
+    NSUInteger index = [[VideoFilterManager filterNames] indexOfObject:filterName];
+    if(index > 0 && index < [VideoFilterManager filterNames].count)
+    {
+        return index;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 + (BOOL)isVIPOnlyAtIndex:(NSUInteger)index
