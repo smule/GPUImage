@@ -47,7 +47,7 @@ NSString *const kGPUImageYUVFullRangeConversionForLAFragmentShaderString = SHADE
  }
  );
 
-NSString *const kGPUImageYUVVideoRangeConversionForLAFragmentShaderString = SHADER_STRING
+static NSString *const kGPUImageYUVVideoRangeConversionForLAFragmentShaderString = SHADER_STRING
 (
  varying highp vec2 textureCoordinate;
 
