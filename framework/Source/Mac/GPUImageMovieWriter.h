@@ -39,6 +39,10 @@ extern NSString *const kGPUImageColorSwizzlingFragmentShaderString;
 @property(nonatomic, copy) void(^audioInputReadyCallback)(void);
 @property(nonatomic) BOOL enabled;
 
+// Smule Hack: Adds a "pre-encode" callback when the frame data is processed and
+// ready to sned to the encoder.
+@property(nonatomic, copy) void(^preEncodeFrameCallback)( double_t timeval, int w, int h, uint8_t *pixelData);
+
 // Initialization and teardown
 - (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize;
 - (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize fileType:(NSString *)newFileType outputSettings:(NSMutableDictionary *)outputSettings;

@@ -527,9 +527,15 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
         
         GLubyte *pixelBufferData = (GLubyte *)CVPixelBufferGetBaseAddress(pixel_buffer);
         glReadPixels(0, 0, videoSize.width, videoSize.height, GL_RGBA, GL_UNSIGNED_BYTE, pixelBufferData);
+
+        if (_preEncodeFrameCallback)
+        {
+            _preEncodeFrameCallback( CMTimeGetSeconds(frameTime),
+                                    (int)videoSize.width, (int)videoSize.height, pixelBufferData );
+        }
     }
     
-//    if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:CMTimeSubtract(frameTime, startTime)]) 
+//    if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:CMTimeSubtract(frameTime, startTime)])
     if(![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:frameTime]) 
     {
         NSLog(@"Problem appending pixel buffer at time: %lld", frameTime.value);
