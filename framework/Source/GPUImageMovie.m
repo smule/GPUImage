@@ -729,6 +729,16 @@
     [self endProcessing];
 }
 
+- (void)pauseProcessing
+{
+    [displayLink setPaused:YES];
+}
+
+- (void)resumeProcessing
+{
+    [displayLink setPaused:NO];
+}
+
 - (void)convertYUVToRGBOutput;
 {
     [GPUImageContext setActiveShaderProgram:yuvConversionProgram];
