@@ -49,7 +49,8 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 }
 
 // Movie recording
-- (void)initializeMovieWithOutputSettings:(NSMutableDictionary *)outputSettings;
+- (void)initializeMovieWithOutputSettings:(NSMutableDictionary *)outputSettings
+                                 metadata:(NSArray *)metadata;
 
 // Frame rendering
 - (void)createDataFBO;
@@ -76,12 +77,14 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 #pragma mark -
 #pragma mark Initialization and teardown
 
-- (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize;
+- (id)initWithMovieURL:(NSURL *)newMovieURL
+                  size:(CGSize)newSize
+              metadata:(NSArray *)metadata
 {
-    return [self initWithMovieURL:newMovieURL size:newSize fileType:AVFileTypeQuickTimeMovie outputSettings:nil];
+    return [self initWithMovieURL:newMovieURL size:newSize fileType:AVFileTypeQuickTimeMovie outputSettings:nil metadata:metadata];
 }
 
-- (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize fileType:(NSString *)newFileType outputSettings:(NSMutableDictionary *)outputSettings;
+- (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize fileType:(NSString *)newFileType outputSettings:(NSMutableDictionary *)outputSettings metadata:(NSArray *)metadata;
 {
     if (!(self = [super init]))
     {
@@ -139,7 +142,7 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
         glEnableVertexAttribArray(colorSwizzlingTextureCoordinateAttribute);
     });
         
-    [self initializeMovieWithOutputSettings:outputSettings];
+    [self initializeMovieWithOutputSettings:outputSettings metadata:metadata];
 
     return self;
 }
@@ -157,7 +160,8 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 #pragma mark -
 #pragma mark Movie recording
 
-- (void)initializeMovieWithOutputSettings:(NSMutableDictionary *)outputSettings;
+- (void)initializeMovieWithOutputSettings:(NSMutableDictionary *)outputSettings
+                                 metadata:(NSArray *)metadata
 {
     isRecording = NO;
     
@@ -185,7 +189,9 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
     
     // Set this to make sure that a functional movie is produced, even if the recording is cut off mid-stream. Only the last second should be lost in that case.
     assetWriter.movieFragmentInterval = CMTimeMakeWithSeconds(1.0, 1000);
-    
+
+    assetWriter.metadata = metadata;
+
     // use default output settings if none specified
     if (outputSettings == nil) 
     {

@@ -44,8 +44,15 @@ extern NSString *const kGPUImageColorSwizzlingFragmentShaderString;
 @property(nonatomic, copy) void(^preEncodeFrameCallback)( double_t timeval, int w, int h, uint8_t *pixelData);
 
 // Initialization and teardown
-- (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize;
-- (id)initWithMovieURL:(NSURL *)newMovieURL size:(CGSize)newSize fileType:(NSString *)newFileType outputSettings:(NSMutableDictionary *)outputSettings;
+- (id)initWithMovieURL:(NSURL *)newMovieURL
+                  size:(CGSize)newSize
+              metadata:(NSArray *)metadata;
+
+- (id)initWithMovieURL:(NSURL *)newMovieURL
+                  size:(CGSize)newSize
+              fileType:(NSString *)newFileType
+        outputSettings:(NSMutableDictionary *)outputSettings
+              metadata:(NSArray *)metadata;
 
 - (void)setHasAudioTrack:(BOOL)hasAudioTrack audioSettings:(NSDictionary *)audioOutputSettings;
 
