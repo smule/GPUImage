@@ -45,6 +45,9 @@ extern NSString *const kGPUImageColorSwizzlingFragmentShaderString;
 
 // Initialization and teardown
 - (id)initWithMovieURL:(NSURL *)newMovieURL
+                  size:(CGSize)newSize;
+
+- (id)initWithMovieURL:(NSURL *)newMovieURL
                   size:(CGSize)newSize
               metadata:(NSArray *)metadata;
 
