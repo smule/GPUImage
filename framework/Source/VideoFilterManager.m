@@ -71,9 +71,22 @@
             return [VideoFilterManager filterGroupAtIndex:i+1];
         }
     }
-    
-    // ID does not match any filter name
+    // default
     return [VideoFilterManager filterGroupAtIndex:1];
+}
+
++ (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
+                             flipHorizontal:(BOOL)flipHorizontal
+{
+    GPUImageFilterGroup* result = [VideoFilterManager filterGroupWithName:filterName];
+    if(flipHorizontal) {
+        NSArray* filters = result.initialFilters;
+        if(filters.count > 0) {
+            GPUImageFilter* lastFilter = filters[filters.count - 1];
+            [lastFilter setInputRotation:kGPUImageFlipHorizonal atIndex:0];
+        }
+    }
+    return result;
 }
 
 + (GPUImageFilterGroup*)filterGroupAtIndex:(NSUInteger)index

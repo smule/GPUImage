@@ -26,6 +26,8 @@
 /*
  * Server
  */
++ (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
+                             flipHorizontal:(BOOL)flipHorizontal;
 
 + (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName;
 
