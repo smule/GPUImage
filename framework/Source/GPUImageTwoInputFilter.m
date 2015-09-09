@@ -89,6 +89,7 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
     if (self.preventRendering)
     {
         [firstInputFramebuffer unlock];
+        firstInputFramebuffer = nil;
         [secondInputFramebuffer unlock];
         return;
     }
@@ -121,6 +122,7 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     [firstInputFramebuffer unlock];
+    firstInputFramebuffer = nil;
     [secondInputFramebuffer unlock];
     if (usingNextFrameForImageCapture)
     {
@@ -147,6 +149,10 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
 {
     if (textureIndex == 0)
     {
+        if (firstInputFramebuffer)
+        {
+            [firstInputFramebuffer unlock];
+        }
         firstInputFramebuffer = newInputFramebuffer;
         hasSetFirstTexture = YES;
         [firstInputFramebuffer lock];
