@@ -742,7 +742,12 @@
 - (void)convertYUVToRGBOutput;
 {
     [GPUImageContext setActiveShaderProgram:yuvConversionProgram];
-    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) onlyTexture:NO];
+
+    if (frameBufferHash == nil)
+    {
+        frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
+    }
+    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:frameBufferHash];
     [outputFramebuffer activateFramebuffer];
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

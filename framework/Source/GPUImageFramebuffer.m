@@ -29,6 +29,7 @@ void dataProviderUnlockCallback (void *info, const void *data, size_t size);
 @synthesize textureOptions = _textureOptions;
 @synthesize texture = _texture;
 @synthesize missingFramebuffer = _missingFramebuffer;
+@synthesize frameBufferHash = _frameBufferHash;
 
 #pragma mark -
 #pragma mark Initialization and teardown
