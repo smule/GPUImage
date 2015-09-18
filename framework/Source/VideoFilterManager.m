@@ -60,7 +60,7 @@
              @"vintge",
              @"selfie",
              @"fight",
-             @"comic"];
+             ];
 }
 
 + (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
@@ -114,11 +114,8 @@
 + (NSArray*)filtersWithIndex:(NSUInteger)index
 {
     switch (index) {
-        case 0:
-        {
-            // Put the final filter here for circular scrolling
-            return [NSArray arrayWithObjects:[[GPUImageHalftoneFilter alloc] init], nil];
-        }
+            
+        case 7: /* fall through -- wrap around for circular scrolling */
         case 1:
         {
             return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
@@ -139,27 +136,20 @@
         }
         case 4:
         {
-            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_vintage.png"];
-            return [NSArray arrayWithObjects:sepia, nil];
+            GPUImageCustomLookupFilter *vintage = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_vintage.png"];
+            return [NSArray arrayWithObjects:vintage, nil];
         }
         case 5:
         {
-            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_selfie.png"];
-            return [NSArray arrayWithObjects:sepia, nil];
+            GPUImageCustomLookupFilter *selfie = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_selfie.png"];
+            return [NSArray arrayWithObjects:selfie, nil];
         }
+            
+        case 0: /* fall through -- wrap around for circular scrolling */
         case 6:
         {
-            GPUImageCustomLookupFilter *sepia = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_fightclub.png"];
-            return [NSArray arrayWithObjects:sepia, nil];
-        }
-        case 7:
-        {
-            return [NSArray arrayWithObjects:[[GPUImageHalftoneFilter alloc] init], nil];
-        }
-        case 8:
-        {
-            // Put the first filter here for circular scrolling
-            return [NSArray arrayWithObjects:[[GPUImageFilter alloc] init], nil];
+            GPUImageCustomLookupFilter *fightclub = [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_fightclub.png"];
+            return [NSArray arrayWithObjects:fightclub, nil];
         }
         default:
         {
