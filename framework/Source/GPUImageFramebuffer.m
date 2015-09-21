@@ -243,9 +243,9 @@ void dataProviderUnlockCallback (void *info, const void *data, size_t size);
 
 - (void)activateFramebuffer;
 {
-    const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
+    const GLenum discards[]  = {GL_DEPTH_ATTACHMENT, GL_COLOR_ATTACHMENT0};
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glDiscardFramebufferEXT(GL_FRAMEBUFFER,1,discards);
+    glDiscardFramebufferEXT(GL_FRAMEBUFFER,2,discards);
     glViewport(0, 0, (int)_size.width, (int)_size.height);
 }
 
