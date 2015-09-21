@@ -316,10 +316,10 @@ NSString *const kGPUImagePassthroughFragmentShaderString = SHADER_STRING
     glClearColor(backgroundColorRed, backgroundColorGreen, backgroundColorBlue, backgroundColorAlpha);
     glClear(GL_COLOR_BUFFER_BIT);
 
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, [firstInputFramebuffer texture]);
 	
-	glUniform1i(filterInputTextureUniform, 2);	
+	glUniform1i(filterInputTextureUniform, 4);
 
     glVertexAttribPointer(filterPositionAttribute, 2, GL_FLOAT, 0, 0, vertices);
 	glVertexAttribPointer(filterTextureCoordinateAttribute, 2, GL_FLOAT, 0, 0, textureCoordinates);

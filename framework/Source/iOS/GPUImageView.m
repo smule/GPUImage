@@ -214,8 +214,12 @@
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, displayFramebuffer);
+
+    const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
     
     glViewport(0, 0, (GLint)_sizeInPixels.width, (GLint)_sizeInPixels.height);
+
+    glDiscardFramebufferEXT(GL_FRAMEBUFFER,1,discards);
 }
 
 - (void)presentFramebuffer;

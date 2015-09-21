@@ -113,13 +113,13 @@ NSString *const kGPUImageTwoInputTextureVertexShaderString = SHADER_STRING
     glClearColor(backgroundColorRed, backgroundColorGreen, backgroundColorBlue, backgroundColorAlpha);
     glClear(GL_COLOR_BUFFER_BIT);
     
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, [firstInputFramebuffer texture]);
-	glUniform1i(filterInputTextureUniform, 2);	
+	glUniform1i(filterInputTextureUniform, 4);
     
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, [secondInputFramebuffer texture]);
-    glUniform1i(filterInputTextureUniform2, 3);
+    glUniform1i(filterInputTextureUniform2, 5);
     
     glVertexAttribPointer(filterPositionAttribute, 2, GL_FLOAT, 0, 0, vertices);
 	glVertexAttribPointer(filterTextureCoordinateAttribute, 2, GL_FLOAT, 0, 0, textureCoordinates);
