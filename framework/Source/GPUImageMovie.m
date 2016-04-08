@@ -489,13 +489,14 @@
 {
     int bufferHeight = (int) CVPixelBufferGetHeight(movieFrame);
     int bufferWidth = (int) CVPixelBufferGetWidth(movieFrame);
+    OSType pixelFormat = CVPixelBufferGetPixelFormatType (movieFrame);
 
     CFTypeRef colorAttachments = CVBufferGetAttachment(movieFrame, kCVImageBufferYCbCrMatrixKey, NULL);
     if (colorAttachments != NULL)
     {
         if(CFStringCompare(colorAttachments, kCVImageBufferYCbCrMatrix_ITU_R_601_4, 0) == kCFCompareEqualTo)
         {
-            if (isFullYUVRange)
+            if (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
             {
                 _preferredConversion = kColorConversion601FullRange;
             }
@@ -511,7 +512,7 @@
     }
     else
     {
-        if (isFullYUVRange)
+        if (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
         {
             _preferredConversion = kColorConversion601FullRange;
         }
