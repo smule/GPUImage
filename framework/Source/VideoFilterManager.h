@@ -9,27 +9,39 @@
 #import <Foundation/Foundation.h>
 @class GPUImageFilterGroup;
 
+typedef enum {
+    VideoFilterTypeNormal = 0,
+    VideoFilterTypeSepia,
+    VideoFilterTypeBlackWhite,
+    VideoFilterTypeVintage,
+    VideoFilterTypeSelfie,
+    VideoFilterTypeFightClub,
+} VideoFilterType;
+
 @interface VideoFilterManager : NSObject
 
-// Total number of filters a user can select
-+ (NSUInteger)numFilters;
++ (VideoFilterManager *)sharedInstance;
 
 // Filter name to send to server and map to localized string
-+ (NSString*)filterNameAtIndex:(NSUInteger)index;
+- (NSString*)filterNameAtIndex:(NSUInteger)index;
+- (NSString *)filterNameForType:(VideoFilterType)videoFilterType;
 
 // Filter index based on filter name
-+ (NSUInteger)filterIndexWithName:(NSString *)filterName;
+- (NSUInteger)filterIndexWithName:(NSString *)filterName;
 
 // Check if fiter at specific index is vip
-+ (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
+- (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
+
+@property (nonnull, nonatomic, strong) NSArray *filterList;
+@property (nonnull, nonatomic, strong) NSArray *vipFilters;;
 
 /*
  * Server
  */
-+ (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
+- (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
                              flipHorizontal:(BOOL)flipHorizontal;
 
-+ (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName;
+- (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName;
 
 /*
  * Client
