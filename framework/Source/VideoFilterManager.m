@@ -92,6 +92,9 @@
     } else if (index == self.filterList.count + 2) {
         return 0;
     }
+    
+    // we should never get here but if we do, just return 0
+    return 0;
 }
 
 - (void)setupGPUFilters {
@@ -240,7 +243,12 @@
             return [self filterGroupAtIndex:i + 1];
         }
     }
-    // default
+    
+    // default (normal. no FX).
+    // NOTE: 1 index is simply because that's how this confusing class was designed
+    // for some reason. the index will be passed through the filterIndexWithWrapping
+    // method which will decrement it to 0 (which is the actual index of normal).
+    // this is the same reason for using (i + 1) in the line above
     return [self filterGroupAtIndex:1];
 }
 
