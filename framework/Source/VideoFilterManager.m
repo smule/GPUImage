@@ -262,7 +262,7 @@
 
     // Chain filters together
 
-    NSArray *filters = [self filtersWithIndex:index];
+    NSArray *filters = [self filtersWithIndex:[self filterIndexWithWrapping:index]];
     int j = 0;
     for (GPUImageFilter *filter in filters) {
         [group addFilter:filter];
