@@ -9,14 +9,14 @@
 #import <Foundation/Foundation.h>
 @class GPUImageFilterGroup;
 
-typedef enum {
+typedef NS_ENUM(NSInteger, VideoFilterType) {
     VideoFilterTypeNormal = 0,
     VideoFilterTypeSepia,
     VideoFilterTypeBlackWhite,
     VideoFilterTypeVintage,
     VideoFilterTypeSelfie,
     VideoFilterTypeFightClub,
-} VideoFilterType;
+};
 
 @interface VideoFilterManager : NSObject
 

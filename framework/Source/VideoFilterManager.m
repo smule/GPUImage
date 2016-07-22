@@ -41,14 +41,14 @@
 
         for (NSString *filterName in vipFilters) {
             VideoFilterType type = [self filterTypeForName:filterName];
-            [filterArray addObject:@(type)];
+            if ((NSInteger)type >= 0) {
+                [filterArray addObject:@(type)];
+            }
         }
 
         _vipFilters = filterArray;
-    } else if ([vipFilters.firstObject isKindOfClass:[NSNumber class]]) {
-        _vipFilters = vipFilters;
     } else {
-        NSLog(@"filter list object type is not supported!");
+        NSLog(@"vip filter list object type is not supported!");
         _vipFilters = @[];
         return;
     }
@@ -65,15 +65,15 @@
 
         for (NSString *filterName in filterList) {
             VideoFilterType type = [self filterTypeForName:filterName];
-            [filterArray addObject:@(type)];
+            if ((NSInteger)type >= 0) {
+                [filterArray addObject:@(type)];
+            }
         }
 
         _filterList = filterArray;
-    } else if ([filterList.firstObject isKindOfClass:[NSNumber class]]) {
-        _filterList = filterList;
     } else {
-        NSLog(@"filter list object type is not supported!");
-        _filterList = @[];
+        NSLog(@"filter order list object type is not supported! normal will be only filter available");
+        _filterList = @[@(VideoFilterTypeNormal)];
         return;
     }
 
@@ -214,6 +214,9 @@
 
 - (NSUInteger)filterIndexWithName:(NSString *)filterName {
     VideoFilterType type = [self filterTypeForName:filterName];
+    if ((NSInteger)type < 0) {
+        type = VideoFilterTypeNormal;
+    }
     NSUInteger index = [self.filterList indexOfObject:@(type)];
     return index > 0 && index < self.filterList.count ? index : 0;
 }
@@ -233,7 +236,7 @@
     };
 
     NSNumber *typeNum = filterNameTypeMap[videoFilterName];
-    return typeNum ? (VideoFilterType)typeNum.integerValue : 0;
+    return typeNum ? (VideoFilterType)typeNum.integerValue : -1;
 }
 
 - (GPUImageFilterGroup *)filterGroupWithName:(NSString *)filterName {
