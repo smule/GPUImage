@@ -16,5 +16,6 @@
 }
 
 - (id)initWithImageNamed:(NSString*)name;
+- (id)initWithGPUImagePicture:(GPUImagePicture *)picture;
 
 @end

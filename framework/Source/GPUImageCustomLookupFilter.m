@@ -40,4 +40,24 @@
     return self;
 }
 
+- (id)initWithGPUImagePicture:(GPUImagePicture *)picture
+{
+    if (!(self = [super init]))
+    {
+        return nil;
+    }
+
+    GPUImageLookupFilter *lookupFilter = [[GPUImageLookupFilter alloc] init];
+    [self addFilter:lookupFilter];
+
+    lookupImageSource = picture;
+    [lookupImageSource addTarget:lookupFilter atTextureLocation:1];
+    [lookupImageSource processImage];
+
+    self.initialFilters = [NSArray arrayWithObjects:lookupFilter, nil];
+    self.terminalFilter = lookupFilter;
+
+    return self;
+}
+
 @end

@@ -12,6 +12,7 @@
 @interface VideoFilterManager ()
 
 @property (nonatomic, strong) NSMutableArray *filters;
+@property (nonatomic, strong) NSMutableDictionary *lookupGPUImagePictures;
 
 @end
 
@@ -117,6 +118,7 @@
 - (void)setupGPUFilters {
     NSUInteger filterListCount = self.filterList.count + 2;
     self.filters = [[NSMutableArray alloc] initWithCapacity:filterListCount];
+    self.lookupGPUImagePictures = [[NSMutableDictionary alloc] init];
 
     for (int i = 0; i < filterListCount; i++) {
         self.filters[i] = [[GPUImageFilterGroup alloc] init];
@@ -163,6 +165,20 @@
     }
 }
 
+- (GPUImagePicture *)GPUImagePictureForImage:(NSString *)imageName
+{
+    GPUImagePicture *picture = nil;
+
+    picture = [self.lookupGPUImagePictures objectForKey:imageName];
+    if (!picture) {
+        UIImage *image = [UIImage imageNamed:imageName];
+        picture = [[GPUImagePicture alloc] initWithImage:image];
+        [self.lookupGPUImagePictures setObject:picture forKey:imageName];
+    }
+
+    return picture;
+}
+
 - (NSArray *)filtersWithIndex:(NSInteger)index {
     VideoFilterType videoFilterType = (VideoFilterType)[self.filterList[index] integerValue];
     
@@ -170,15 +186,15 @@
         return @[[[GPUImageFilter alloc] init]];
     } else if (videoFilterType == VideoFilterTypeSepia) {
         GPUImageCustomLookupFilter *sepia =
-        [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_sepia.png"];
+        [[GPUImageCustomLookupFilter alloc] initWithGPUImagePicture:[self GPUImagePictureForImage:@"lookup_sepia.png"]];
         return @[sepia];
     } else if (videoFilterType == VideoFilterTypeSelfie) {
         GPUImageCustomLookupFilter *selfie =
-        [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_selfie.png"];
+        [[GPUImageCustomLookupFilter alloc] initWithGPUImagePicture:[self GPUImagePictureForImage:@"lookup_selfie.png"]];
         return @[selfie];
     } else if (videoFilterType == VideoFilterTypeVintage) {
         GPUImageCustomLookupFilter *vintage =
-        [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_vintage.png"];
+        [[GPUImageCustomLookupFilter alloc] initWithGPUImagePicture:[self GPUImagePictureForImage:@"lookup_vintage.png"]];
         return @[vintage];
     } else if (videoFilterType == VideoFilterTypeBlackWhite) {
         GPUImageGrayscaleFilter *bw = [[GPUImageGrayscaleFilter alloc] init];
@@ -189,7 +205,7 @@
         return @[bw, levels];
     } else if (videoFilterType == VideoFilterTypeFightClub) {
         GPUImageCustomLookupFilter *fightclub =
-        [[GPUImageCustomLookupFilter alloc] initWithImageNamed:@"lookup_fightclub.png"];
+        [[GPUImageCustomLookupFilter alloc] initWithGPUImagePicture:[self GPUImagePictureForImage:@"lookup_fightclub.png"]];
         return @[fightclub];
     } else {
         return @[[[GPUImageFilter alloc] init]];
