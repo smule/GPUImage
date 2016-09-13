@@ -18,6 +18,15 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
     VideoFilterTypeFightClub,
 };
 
+// Transient class where it's only purposes is to store the filter list and vip filter's list
+@interface VideoFilterVariables : NSObject
+
++ (VideoFilterVariables *)sharedInstance;
+@property (nonnull, nonatomic, strong) NSArray *filterList;
+@property (nonnull, nonatomic, strong) NSArray *vipFilters;
+
+@end
+
 @interface VideoFilterManager : NSObject
 
 + (VideoFilterManager *)sharedInstance;
@@ -33,7 +42,7 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
 - (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
 
 @property (nonnull, nonatomic, strong) NSArray *filterList;
-@property (nonnull, nonatomic, strong) NSArray *vipFilters;;
+@property (nonnull, nonatomic, strong) NSArray *vipFilters;
 
 /*
  * Server

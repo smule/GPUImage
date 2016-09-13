@@ -15,6 +15,20 @@
 
 @end
 
+@implementation VideoFilterVariables
+
++ (VideoFilterVariables *)sharedInstance {
+    static VideoFilterVariables *shared = nil;
+    static dispatch_once_t onceToken;
+    
+    dispatch_once(&onceToken, ^{
+        shared = [[VideoFilterVariables alloc] init];
+    });
+    return shared;
+}
+
+@end
+
 @implementation VideoFilterManager
 
 #pragma mark - class methods
@@ -25,7 +39,10 @@
 
     dispatch_once(&onceToken, ^{
         shared = [[VideoFilterManager alloc] init];
+        shared.filterList = [VideoFilterVariables sharedInstance].filterList;
+        shared.vipFilters = [VideoFilterVariables sharedInstance].vipFilters;
     });
+    
     return shared;
 }
 
