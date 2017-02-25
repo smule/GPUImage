@@ -7,7 +7,10 @@
 //
 
 #import "GPUImage.h"
+#import "IndexingFilter.h"
+#import "StepFilter.h"
 #import "VideoFilterManager.h"
+#import "MaskBlendFilter.h"
 
 @interface VideoFilterManager ()
 
@@ -122,7 +125,61 @@
 
     for (int i = 0; i < filterListCount; i++) {
         self.filters[i] = [[GPUImageFilterGroup alloc] init];
-
+        
+        // Create airbrush filter
+        GPUImageFilterGroup * edgePreservingBlur = [[GPUImageFilterGroup alloc] init];
+        
+        GPUImageFilter * ident = [[GPUImageFilter alloc] init];
+        [edgePreservingBlur addFilter:ident];
+        
+        
+        IndexingFilter * ind = [[IndexingFilter alloc] init];
+        [edgePreservingBlur addFilter:ind];
+        [ind setScale:(CGPoint){3.0,3.0}];
+        [ident addTarget:ind];
+        
+        GPUImageSobelEdgeDetectionFilter * sobel = [[GPUImageSobelEdgeDetectionFilter alloc] init];
+        [edgePreservingBlur addFilter:sobel];
+        [ind addTarget:sobel];
+        
+        
+        GPUImageBoxBlurFilter * smallBox = [[GPUImageBoxBlurFilter alloc] init];
+        [smallBox setBlurRadiusInPixels:3];
+        [edgePreservingBlur addFilter:smallBox];
+        [ind addTarget:smallBox];
+        
+        GPUImageBoxBlurFilter * edgeBox = [[GPUImageBoxBlurFilter alloc] init];
+        [edgeBox setBlurRadiusInPixels:3];
+        [edgePreservingBlur addFilter:edgeBox];
+        [sobel addTarget:edgeBox];
+        
+        IndexingFilter * ind2 = [[IndexingFilter alloc] init];
+        [edgePreservingBlur addFilter:ind2];
+        [ind2 setScale:(CGPoint){0.33333,0.33333}];
+        [smallBox addTarget:ind2];
+        
+        StepFilter * step = [[StepFilter alloc] init];
+        [step setEdgeOne:0.05];
+        [step setEdgeTwo:0.4];
+        [edgePreservingBlur addFilter:step];
+        [edgeBox addTarget:step];
+        
+        IndexingFilter * ind3 = [[IndexingFilter alloc] init];
+        [edgePreservingBlur addFilter:ind3];
+        [ind3 setScale:(CGPoint){0.33333,0.33333}];
+        [step addTarget:ind3];
+        
+        MaskBlendFilter * mask = [[MaskBlendFilter alloc] init];
+        [edgePreservingBlur addFilter:mask];
+        [ident addTarget:mask];
+        [ind2 addTarget:mask];
+        [ind3 addTarget:mask];
+        
+        [edgePreservingBlur setInitialFilters:@[ident]];
+        [edgePreservingBlur setTerminalFilter:mask];
+        
+        [self.filters[i] addFilter:edgePreservingBlur];
+        
         // Chain left filters together
 
         NSArray *leftFilters = [self filtersWithIndex:[self filterIndexWithWrapping:i]];
@@ -146,21 +203,20 @@
             }
             j++;
         }
-
+        
+        [edgePreservingBlur addTarget:leftFilters[0]];
+        [edgePreservingBlur addTarget:rightFilters[0]];
+        
         // Create split filter to filter part of image based on offset
-
+        
         GPUImageSplitFilter *splitFilter = [[GPUImageSplitFilter alloc] init];
         [self.filters[i] addFilter:splitFilter];
 
         // Add split filter as a target to the final left and right filter
-
         [leftFilters[leftFilters.count - 1] addTarget:splitFilter];
         [rightFilters[rightFilters.count - 1] addTarget:splitFilter];
-
-        [self.filters[i] setInitialFilters:[NSArray arrayWithObjects:leftFilters[0],
-                                                                     rightFilters[0],
-                                                                     splitFilter,
-                                                                     nil]];
+        
+        [self.filters[i] setInitialFilters:@[edgePreservingBlur]];
         [self.filters[i] setTerminalFilter:splitFilter];
     }
 }
