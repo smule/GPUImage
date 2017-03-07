@@ -16,6 +16,8 @@
 
 @property (nonatomic, strong) NSMutableArray *filters;
 @property (nonatomic, strong) NSMutableDictionary *lookupGPUImagePictures;
+@property (nonatomic, strong) GPUImageFilter *airbrushFilter;
+@property (nonatomic) NSInteger currentAirbrushGroupIndex;
 
 @end
 
@@ -45,6 +47,7 @@
         shared = [[VideoFilterManager alloc] init];
         shared.filterList = [VideoFilterVariables sharedInstance].filterList;
         shared.vipFilters = [VideoFilterVariables sharedInstance].vipFilters;
+        shared.currentAirbrushGroupIndex = NSNotFound;
     });
     
     return shared;
@@ -122,11 +125,9 @@
     NSUInteger filterListCount = self.filterList.count + 2;
     self.filters = [[NSMutableArray alloc] initWithCapacity:filterListCount];
     self.lookupGPUImagePictures = [[NSMutableDictionary alloc] init];
-
-    for (int i = 0; i < filterListCount; i++) {
-        self.filters[i] = [[GPUImageFilterGroup alloc] init];
-        
-        // Create airbrush filter
+    
+    // Create airbrush filter
+    {
         GPUImageFilterGroup * edgePreservingBlur = [[GPUImageFilterGroup alloc] init];
         
         GPUImageFilter * ident = [[GPUImageFilter alloc] init];
@@ -178,7 +179,11 @@
         [edgePreservingBlur setInitialFilters:@[ident]];
         [edgePreservingBlur setTerminalFilter:mask];
         
-        [self.filters[i] addFilter:edgePreservingBlur];
+        self.airbrushFilter = edgePreservingBlur;
+    }
+    
+    for (int i = 0; i < filterListCount; i++) {
+        self.filters[i] = [[GPUImageFilterGroup alloc] init];
         
         // Chain left filters together
 
@@ -204,8 +209,11 @@
             j++;
         }
         
-        [edgePreservingBlur addTarget:leftFilters[0]];
-        [edgePreservingBlur addTarget:rightFilters[0]];
+        // Make sure the two first filters in the filters[i] group
+        // are the left and right filter so we can easily associate them
+        // with the airbrush filter if needed later on.
+        [self.filters[i] removeFilter:rightFilters[0]];
+        [self.filters[i] insertFilter:rightFilters[0] atIndex:1];
         
         // Create split filter to filter part of image based on offset
         
@@ -216,7 +224,7 @@
         [leftFilters[leftFilters.count - 1] addTarget:splitFilter];
         [rightFilters[rightFilters.count - 1] addTarget:splitFilter];
         
-        [self.filters[i] setInitialFilters:@[edgePreservingBlur]];
+        [self.filters[i] setInitialFilters:@[leftFilters[0], rightFilters[0]]];
         [self.filters[i] setTerminalFilter:splitFilter];
     }
 }
@@ -378,7 +386,62 @@
     return group;
 }
 
-- (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index {
+- (void)addAirbrushFilterToGroup:(GPUImageFilterGroup *)filterGroup {
+    if (filterGroup.filterCount < 2) {
+        return;
+    }
+    // Assumptions:
+    // The first left filter is at index 0 in the filter group.
+    // The first right filter is at index 1 in the filter group.
+    GPUImageFilter *firstLeftFilter = [filterGroup filterAtIndex:0];
+    GPUImageFilter *firstRightFilter = [filterGroup filterAtIndex:1];
+    
+    // The video appears flipped unless we add, remove and then add the targets again.
+    // TODO (Anton): Investigate why that is the case. However, this is not very CPU intense
+    // code and will be called very rarely so it's not high priority to fix.
+    [self.airbrushFilter removeAllTargets];
+    [self.airbrushFilter addTarget:firstLeftFilter];
+    [self.airbrushFilter addTarget:firstRightFilter];
+    
+    [filterGroup insertFilter:self.airbrushFilter atIndex:0];
+    [filterGroup setInitialFilters:@[self.airbrushFilter]];
+}
+
+- (void)removeAirbrushFilterFromGroup:(GPUImageFilterGroup *)filterGroup {
+    if (filterGroup.filterCount < 3) {
+        return;
+    }
+    [self.airbrushFilter removeAllTargets];
+    // Assumptions:
+    // The airbrush filter is at index 0 in the filter group.
+    // The first left filter is at index 1 in the filter group.
+    // The first right filter is at index 2 in the filter group.
+    [filterGroup removeFilter:self.airbrushFilter];
+    // The first left filter will now be at index 0 in the filter group.
+    // The first right filter will now be at index 1 in the filter group.
+    GPUImageFilter *firstLeftFilter = [filterGroup filterAtIndex:0];
+    GPUImageFilter *firstRightFilter = [filterGroup filterAtIndex:1];
+    [filterGroup setInitialFilters:@[firstLeftFilter, firstRightFilter]];
+}
+
+- (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index includeAirbrush:(BOOL)includeAirbrush {
+    
+    if (includeAirbrush) {
+        if (self.currentAirbrushGroupIndex != index) {
+            if (self.currentAirbrushGroupIndex != NSNotFound) {
+                [self removeAirbrushFilterFromGroup:self.filters[self.currentAirbrushGroupIndex]];
+            }
+            
+            [self addAirbrushFilterToGroup:self.filters[index]];
+            self.currentAirbrushGroupIndex = index;
+        }
+    } else {
+        if (self.currentAirbrushGroupIndex != NSNotFound) {
+            [self removeAirbrushFilterFromGroup:self.filters[self.currentAirbrushGroupIndex]];
+            self.currentAirbrushGroupIndex = NSNotFound;
+        }
+    }
+    
     return self.filters[index];
 }
 

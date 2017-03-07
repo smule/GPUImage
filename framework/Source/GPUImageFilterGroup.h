@@ -13,6 +13,8 @@
 
 // Filter management
 - (void)addFilter:(GPUImageOutput<GPUImageInput> *)newFilter;
+- (void)removeFilter:(GPUImageOutput<GPUImageInput> *)filter;
+- (void)insertFilter:(GPUImageOutput<GPUImageInput> *)newFilter atIndex:(NSUInteger)index;
 - (GPUImageOutput<GPUImageInput> *)filterAtIndex:(NSUInteger)filterIndex;
 - (NSUInteger)filterCount;
 

@@ -27,6 +27,15 @@
     [filters addObject:newFilter];
 }
 
+- (void)removeFilter:(GPUImageOutput<GPUImageInput> *)filter
+{
+    [filters removeObject:filter];
+}
+- (void)insertFilter:(GPUImageOutput<GPUImageInput> *)newFilter atIndex:(NSUInteger)index
+{
+    [filters insertObject:newFilter atIndex:index];
+}
+
 - (GPUImageOutput<GPUImageInput> *)filterAtIndex:(NSUInteger)filterIndex;
 {
     return [filters objectAtIndex:filterIndex];
