@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 @class GPUImageFilterGroup;
 
+extern NSString * const kAirbrushFilterIdentifier;
+
 typedef NS_ENUM(NSInteger, VideoFilterType) {
     VideoFilterTypeNormal = 0,
     VideoFilterTypeSepia,
@@ -56,7 +58,7 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
 - (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
                              flipHorizontal:(BOOL)flipHorizontal;
 
-- (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName;
+- (GPUImageFilterGroup*)filterGroupWithFilterNames:(NSArray<NSString *> *)filterNames;
 
 /*
  * Client
