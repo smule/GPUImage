@@ -490,6 +490,14 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 
 - (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index includeAirbrush:(BOOL)includeAirbrush {
     
+    GPUImageFilterGroup *filterGroup = self.filters[index];
+    // Make sure the rotation of the initial filters are reset
+    for ( int i = 0; i < filterGroup.initialFilters.count; i++ )
+    {
+        [filterGroup.initialFilters[i] setInputRotation:kGPUImageNoRotation atIndex:0];
+    }
+    
+    // Update the filter group to include/exclude airbrush filter if needed
     if (includeAirbrush) {
         if (self.currentAirbrushGroupIndex != index) {
             if (self.currentAirbrushGroupIndex != NSNotFound) {
@@ -505,15 +513,6 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
             self.currentAirbrushGroupIndex = NSNotFound;
         }
     }
-    
-    // Make sure the rotation of the filters are reset
-    GPUImageFilterGroup *filterGroup = self.filters[index];
-    for ( int i = 0; i < filterGroup.filterCount; i++ )
-    {
-        GPUImageFilter *filter = [filterGroup filterAtIndex:i];
-        [filter setInputRotation:kGPUImageNoRotation atIndex:0];
-    }
-
     
     return self.filters[index];
 }
