@@ -20,6 +20,11 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
     VideoFilterTypeFightClub,
 };
 
+typedef NS_ENUM(NSInteger, AirbrushFilterType) {
+    AirbrushFilterTypeNone,
+    AirbrushFilterTypeSimple,
+    AirbrushFilterTypeComplex
+};
 
 
 // Transient class where it's only purposes is to store the filter list and vip filter's list
@@ -65,6 +70,6 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
  */
 
 // Return two combined filters for swiping
-- (GPUImageFilterGroup*)splitFilterGroupAtIndex:(NSUInteger)index includeAirbrush:(BOOL)includeAirbrush;
+- (GPUImageFilterGroup*)splitFilterGroupAtIndex:(NSUInteger)index airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
 
 @end

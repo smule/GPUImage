@@ -21,7 +21,8 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 @property (nonatomic, strong) NSMutableDictionary *lookupGPUImagePictures;
 // Airbrush filter for use in the split filter groups.
 // We reuse it in all split filter groups.
-@property (nonatomic, strong) GPUImageFilter *splitAirbrushFilter;
+@property (nonatomic, strong) GPUImageFilter *splitComplexAirbrushFilter;
+@property (nonatomic, strong) GPUImageFilter *splitSimpleAirbrushFilter;
 @property (nonatomic) NSInteger currentAirbrushGroupIndex;
 
 @end
@@ -131,7 +132,8 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     self.filters = [[NSMutableArray alloc] initWithCapacity:filterListCount];
     self.lookupGPUImagePictures = [[NSMutableDictionary alloc] init];
     
-    self.splitAirbrushFilter = [self createAirbrushFilter];
+    self.splitComplexAirbrushFilter = [self createAirbrushFilter];
+    self.splitSimpleAirbrushFilter = [self createSimpleAirbrushFilter];
     
     for (int i = 0; i < filterListCount; i++) {
         self.filters[i] = [[GPUImageFilterGroup alloc] init];
@@ -180,6 +182,44 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     }
 }
 
+static const CGFloat kReferenceWidth = 360;
+static const CGFloat kReferenceHeight = 480;
+
+- (GPUImageFilter *)createSimpleAirbrushFilter
+{
+    static const CGFloat scaleDownFactor = 2;
+    GPUImageFilterGroup * edgePreservingBlur = [[GPUImageFilterGroup alloc] init];
+    
+    GPUImageFilter * ident = [[GPUImageFilter alloc] init];
+    [edgePreservingBlur addFilter:ident];
+    
+    GPUImageBoxBlurFilter * smallBox = [[GPUImageBoxBlurFilter alloc] init];
+    [smallBox forceProcessingAtSize:CGSizeMake(kReferenceWidth/scaleDownFactor, kReferenceHeight/scaleDownFactor)];
+    [smallBox setBlurRadiusInPixels:2];
+    [edgePreservingBlur addFilter:smallBox];
+    [ident addTarget:smallBox];
+    
+    GPUImageSobelEdgeDetectionFilter * sobel = [[GPUImageSobelEdgeDetectionFilter alloc] init];
+    static const CGFloat kSobelSize = 1.9;
+    sobel.texelWidth = 1.0 / kReferenceWidth * kSobelSize;
+    sobel.texelHeight = 1.0 / kReferenceHeight * kSobelSize;
+    sobel.edgeStrength = 4.7;
+    [sobel forceProcessingAtSize:CGSizeMake(kReferenceWidth/scaleDownFactor, kReferenceHeight/scaleDownFactor)];
+    [edgePreservingBlur addFilter:sobel];
+    [smallBox addTarget:sobel];
+    
+    MaskBlendFilter * mask = [[MaskBlendFilter alloc] init];
+    [edgePreservingBlur addFilter:mask];
+    [ident addTarget:mask];
+    [smallBox addTarget:mask];
+    [sobel addTarget:mask];
+    
+    [edgePreservingBlur setInitialFilters:@[ident]];
+    [edgePreservingBlur setTerminalFilter:mask];
+    
+    return edgePreservingBlur;
+}
+
 - (GPUImageFilter *)createAirbrushFilter
 {
     CGFloat scale = 3.0;
@@ -192,7 +232,6 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     CGFloat postrng = 0.33;
     CGFloat coarsemid = 0.175;
     CGFloat coarserng = 0.175;
-    
     
     GPUImageFilterGroup * edgePreservingBlur = [[GPUImageFilterGroup alloc] init];
     
@@ -451,7 +490,7 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     return group;
 }
 
-- (void)addAirbrushFilterToSplitFilterGroup:(GPUImageFilterGroup *)filterGroup {
+- (void)addAirbrushFilter:(GPUImageFilter *)airbrushFilter toSplitFilterGroup:(GPUImageFilterGroup *)filterGroup {
     if (filterGroup.filterCount < 2) {
         return;
     }
@@ -464,23 +503,26 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     // The video appears flipped unless we add, remove and then add the targets again.
     // TODO (Anton): Investigate why that is the case. However, this is not very CPU intense
     // code and will be called very rarely so it's not high priority to fix.
-    [self.splitAirbrushFilter addTarget:firstLeftFilter];
-    [self.splitAirbrushFilter addTarget:firstRightFilter];
+    [airbrushFilter addTarget:firstLeftFilter];
+    [airbrushFilter addTarget:firstRightFilter];
     
-    [filterGroup insertFilter:self.splitAirbrushFilter atIndex:0];
-    [filterGroup setInitialFilters:@[self.splitAirbrushFilter]];
+    [filterGroup insertFilter:airbrushFilter atIndex:0];
+    [filterGroup setInitialFilters:@[airbrushFilter]];
 }
 
 - (void)removeAirbrushFilterFromSplitFilterGroup:(GPUImageFilterGroup *)filterGroup {
     if (filterGroup.filterCount < 3) {
         return;
     }
-    [self.splitAirbrushFilter removeAllTargets];
+    
     // Assumptions:
     // The airbrush filter is at index 0 in the filter group.
     // The first left filter is at index 1 in the filter group.
     // The first right filter is at index 2 in the filter group.
-    [filterGroup removeFilter:self.splitAirbrushFilter];
+    GPUImageFilter *airbrushFilter = [filterGroup filterAtIndex:0];
+    [airbrushFilter removeAllTargets];
+    [filterGroup removeFilter:airbrushFilter];
+    
     // The first left filter will now be at index 0 in the filter group.
     // The first right filter will now be at index 1 in the filter group.
     GPUImageFilter *firstLeftFilter = [filterGroup filterAtIndex:0];
@@ -488,7 +530,7 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     [filterGroup setInitialFilters:@[firstLeftFilter, firstRightFilter]];
 }
 
-- (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index includeAirbrush:(BOOL)includeAirbrush {
+- (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
     
     GPUImageFilterGroup *filterGroup = self.filters[index];
     // Make sure the rotation of the initial filters are reset
@@ -497,14 +539,28 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
         [filterGroup.initialFilters[i] setInputRotation:kGPUImageNoRotation atIndex:0];
     }
     
+    BOOL includeAirbrush = airbrushFilterType != AirbrushFilterTypeNone;
+    
     // Update the filter group to include/exclude airbrush filter if needed
     if (includeAirbrush) {
-        if (self.currentAirbrushGroupIndex != index) {
-            if (self.currentAirbrushGroupIndex != NSNotFound) {
-                [self removeAirbrushFilterFromSplitFilterGroup:self.filters[self.currentAirbrushGroupIndex]];
+        GPUImageFilter *airbrushFilter = airbrushFilterType == AirbrushFilterTypeSimple ? self.splitSimpleAirbrushFilter : self.splitComplexAirbrushFilter;
+        if (self.currentAirbrushGroupIndex != NSNotFound) {
+            GPUImageFilterGroup *currentAirbrushFilterGroup = self.filters[self.currentAirbrushGroupIndex];
+            GPUImageFilter *currentAirbrushFilter = [currentAirbrushFilterGroup filterAtIndex:0];
+            if (self.currentAirbrushGroupIndex != index || airbrushFilter != currentAirbrushFilter)
+            {
+                [self removeAirbrushFilterFromSplitFilterGroup:currentAirbrushFilterGroup];
+                [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:self.filters[index]];
+                self.currentAirbrushGroupIndex = index;
             }
-            
-            [self addAirbrushFilterToSplitFilterGroup:self.filters[index]];
+            else
+            {
+                // The airbrush is already part of the current filter gorup
+            }
+        }
+        else
+        {
+            [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:self.filters[index]];
             self.currentAirbrushGroupIndex = index;
         }
     } else {
