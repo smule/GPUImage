@@ -48,6 +48,9 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 
 // Filter index based on filter name
 - (NSUInteger)filterIndexWithName:(NSString *)filterName;
+// Finds the first filter name in the array that matches a VideoFilterType,
+// and returns the index of that filter type.
+- (NSUInteger)filterIndexOfFirstMatch:(NSArray<NSString *> *)filterNames;
 
 // Check if fiter at specific index is vip
 - (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;

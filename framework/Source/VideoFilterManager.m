@@ -410,6 +410,17 @@ static const CGFloat kReferenceHeight = 480;
     return index > 0 && index < self.filterList.count ? index : 0;
 }
 
+- (NSUInteger)filterIndexOfFirstMatch:(NSArray<NSString *> *)filterNames {
+    for (NSString *filterName in filterNames) {
+        VideoFilterType type = [self filterTypeForName:filterName];
+        if ((NSInteger)type >= 0) {
+            return [self filterIndexWithName:filterName];
+        }
+    }
+    
+    return [self filterIndexWithName:@""];
+}
+
 - (BOOL)isVIPOnlyAtIndex:(NSUInteger)index {
     return ([self.vipFilters indexOfObject:self.filterList[index]] != NSNotFound);
 }
