@@ -32,9 +32,9 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 
 + (VideoFilterVariables *)sharedInstance;
 // The names of the filters as strings.
-@property (nonnull, nonatomic, strong) NSArray *filterList;
+@property (nonatomic, strong) NSArray *filterList;
 // The name of the VIP filters as strings.
-@property (nonnull, nonatomic, strong) NSArray *vipFilters;
+@property (nonatomic, strong) NSArray *vipFilters;
 
 @end
 
@@ -56,9 +56,9 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 - (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
 
 // The names of the filters as strings.
-@property (nonnull, nonatomic, strong) NSArray *filterList;
+@property (nonatomic, strong) NSArray *filterList;
 // The name of the VIP filters as strings.
-@property (nonnull, nonatomic, strong) NSArray *vipFilters;
+@property (nonatomic, strong) NSArray *vipFilters;
 
 /*
  * Server
