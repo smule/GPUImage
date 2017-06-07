@@ -160,7 +160,7 @@
 #import "GPUImageiOSBlurFilter.h"
 #import "GPUImageLuminanceRangeFilter.h"
 #import "GPUImageDirectionalNonMaximumSuppressionFilter.h"
-#import "GPUImageDirectionalSobelEdgeDetectionFilter.h"
+#import "GPUimageDirectionalSobelEdgeDetectionFilter.h"
 #import "GPUImageSingleComponentGaussianBlurFilter.h"
 #import "GPUImageThreeInputFilter.h"
 #import "GPUImageWeakPixelInclusionFilter.h"
