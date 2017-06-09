@@ -536,8 +536,8 @@ static const CGFloat kReferenceHeight = 480;
     
     // The first left filter will now be at index 0 in the filter group.
     // The first right filter will now be at index 1 in the filter group.
-    GPUImageFilterGroup *firstLeftFilter = (GPUImageFilterGroup *)[filterGroup filterAtIndex:0];
-    GPUImageFilterGroup *firstRightFilter = (GPUImageFilterGroup *)[filterGroup filterAtIndex:1];
+    GPUImageFilter *firstLeftFilter = (GPUImageFilter *)[filterGroup filterAtIndex:0];
+    GPUImageFilter *firstRightFilter = (GPUImageFilter *)[filterGroup filterAtIndex:1];
     [filterGroup setInitialFilters:@[firstLeftFilter, firstRightFilter]];
 }
 
