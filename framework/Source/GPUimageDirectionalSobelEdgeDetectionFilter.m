@@ -1,4 +1,4 @@
-#import "GPUimageDirectionalSobelEdgeDetectionFilter.h"
+#import "GPUImageDirectionalSobelEdgeDetectionFilter.h"
 
 @implementation GPUimageDirectionalSobelEdgeDetectionFilter
 
