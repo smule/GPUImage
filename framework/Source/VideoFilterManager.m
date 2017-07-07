@@ -17,13 +17,13 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 
 @interface VideoFilterManager ()
 
-@property (nonatomic, strong) NSMutableArray *filters;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, GPUImageFilterGroup *> *filters;
 @property (nonatomic, strong) NSMutableDictionary *lookupGPUImagePictures;
 // Airbrush filter for use in the split filter groups.
 // We reuse it in all split filter groups.
 @property (nonatomic, strong) GPUImageFilterGroup *splitComplexAirbrushFilter;
 @property (nonatomic, strong) GPUImageFilterGroup *splitSimpleAirbrushFilter;
-@property (nonatomic) NSInteger currentAirbrushGroupIndex;
+@property (nonatomic, assign) VideoFilterType currentAirbrushFilterType;
 
 @end
 
@@ -53,7 +53,7 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
         shared = [[VideoFilterManager alloc] init];
         shared.filterList = [VideoFilterVariables sharedInstance].filterList;
         shared.vipFilters = [VideoFilterVariables sharedInstance].vipFilters;
-        shared.currentAirbrushGroupIndex = NSNotFound;
+        shared.currentAirbrushFilterType = NSNotFound;
     });
     
     return shared;
@@ -129,21 +129,26 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 
 - (void)setupGPUFilters {
     NSUInteger filterListCount = self.filterList.count + 2;
-    self.filters = [[NSMutableArray alloc] initWithCapacity:filterListCount];
+    self.filters = [[NSMutableDictionary alloc] initWithCapacity:filterListCount];
     self.lookupGPUImagePictures = [[NSMutableDictionary alloc] init];
     
     self.splitComplexAirbrushFilter = [self createAirbrushFilter];
     self.splitSimpleAirbrushFilter = [self createSimpleAirbrushFilter];
     
     for (int i = 0; i < filterListCount; i++) {
-        self.filters[i] = [[GPUImageFilterGroup alloc] init];
+        NSInteger leftIndex = [self filterIndexWithWrapping:i];
+        NSInteger rightIndex = [self filterIndexWithWrapping:(i + 1)];
+        VideoFilterType leftFilterType = (VideoFilterType)[self.filterList[leftIndex] integerValue];
+        VideoFilterType rightFilterType = (VideoFilterType)[self.filterList[rightIndex] integerValue];
+        
+        GPUImageFilterGroup *filterGroup = [[GPUImageFilterGroup alloc] init];
         
         // Chain left filters together
 
-        NSArray *leftFilters = [self filtersWithIndex:[self filterIndexWithWrapping:i]];
+        NSArray *leftFilters = [self filtersWithType:leftFilterType];
         int j = 0;
         for (GPUImageFilter *filter in leftFilters) {
-            [self.filters[i] addFilter:filter];
+            [filterGroup addFilter:filter];
             if (j < (leftFilters.count - 1)) {
                 [filter addTarget:leftFilters[j + 1]];
             }
@@ -152,10 +157,10 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 
         // Chain right filters together
 
-        NSArray *rightFilters = [self filtersWithIndex:[self filterIndexWithWrapping:(i + 1)]];
+        NSArray *rightFilters = [self filtersWithType:rightFilterType];
         j = 0;
         for (GPUImageFilter *filter in rightFilters) {
-            [self.filters[i] addFilter:filter];
+            [filterGroup addFilter:filter];
             if (j < (rightFilters.count - 1)) {
                 [filter addTarget:rightFilters[j + 1]];
             }
@@ -165,20 +170,22 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
         // Make sure the two first filters in the filters[i] group
         // are the left and right filter so we can easily associate them
         // with the airbrush filter if needed later on.
-        [self.filters[i] removeFilter:rightFilters[0]];
-        [self.filters[i] insertFilter:rightFilters[0] atIndex:1];
+        [filterGroup removeFilter:rightFilters[0]];
+        [filterGroup insertFilter:rightFilters[0] atIndex:1];
         
         // Create split filter to filter part of image based on offset
         
         GPUImageSplitFilter *splitFilter = [[GPUImageSplitFilter alloc] init];
-        [self.filters[i] addFilter:splitFilter];
+        [filterGroup addFilter:splitFilter];
 
         // Add split filter as a target to the final left and right filter
         [leftFilters[leftFilters.count - 1] addTarget:splitFilter];
         [rightFilters[rightFilters.count - 1] addTarget:splitFilter];
         
-        [self.filters[i] setInitialFilters:@[leftFilters[0], rightFilters[0]]];
-        [self.filters[i] setTerminalFilter:splitFilter];
+        [filterGroup setInitialFilters:@[leftFilters[0], rightFilters[0]]];
+        [filterGroup setTerminalFilter:splitFilter];
+        
+        self.filters[@(leftFilterType)] = filterGroup;
     }
 }
 
@@ -335,9 +342,7 @@ static const CGFloat kReferenceHeight = 480;
     return picture;
 }
 
-- (NSArray *)filtersWithIndex:(NSInteger)index {
-    VideoFilterType videoFilterType = (VideoFilterType)[self.filterList[index] integerValue];
-    
+- (NSArray *)filtersWithType:(VideoFilterType)videoFilterType {
     if (videoFilterType == VideoFilterTypeNormal) {
         return @[[[GPUImageFilter alloc] init]];
     } else if (videoFilterType == VideoFilterTypeSepia) {
@@ -370,11 +375,6 @@ static const CGFloat kReferenceHeight = 480;
 
 #pragma mark - public methods
 
-- (NSString *)filterNameAtIndex:(NSUInteger)index {
-    VideoFilterType type = (VideoFilterType)[self.filterList[index] integerValue];
-    return [self filterNameForType:type];
-}
-
 - (NSString *)filterNameForType:(VideoFilterType)videoFilterType {
     switch (videoFilterType) {
     case VideoFilterTypeNormal:
@@ -401,28 +401,8 @@ static const CGFloat kReferenceHeight = 480;
     }
 }
 
-- (NSUInteger)filterIndexWithName:(NSString *)filterName {
-    VideoFilterType type = [self filterTypeForName:filterName];
-    if ((NSInteger)type < 0) {
-        type = VideoFilterTypeNormal;
-    }
-    NSUInteger index = [self.filterList indexOfObject:@(type)];
-    return index > 0 && index < self.filterList.count ? index : 0;
-}
-
-- (NSUInteger)filterIndexOfFirstMatch:(NSArray<NSString *> *)filterNames {
-    for (NSString *filterName in filterNames) {
-        VideoFilterType type = [self filterTypeForName:filterName];
-        if ((NSInteger)type >= 0) {
-            return [self filterIndexWithName:filterName];
-        }
-    }
-    
-    return [self filterIndexWithName:@""];
-}
-
-- (BOOL)isVIPOnlyAtIndex:(NSUInteger)index {
-    return ([self.vipFilters indexOfObject:self.filterList[index]] != NSNotFound);
+- (BOOL)isVIPOnlyFilter:(VideoFilterType)videoFilterType {
+    return ([self.vipFilters indexOfObject:[self filterNameForType:videoFilterType]] != NSNotFound);
 }
 
 - (VideoFilterType)filterTypeForName:(NSString *)videoFilterName {
@@ -445,44 +425,25 @@ static const CGFloat kReferenceHeight = 480;
     NSString *lensFilterName = [filterNames lastObject];
     
     for (int i = 0; i < self.filterList.count; i++) {
-        NSString *name = [self filterNameAtIndex:i];
+        VideoFilterType type = [self.filterList[i] integerValue];
+        NSString *name = [self filterNameForType:type];
+        
         if ([name isEqualToString:lensFilterName]) {
-            return [self filterGroupAtIndex:i + 1 includeAirbrushFilter:includeAirbrushFilter];
+            return [self filterGroupForType:type includeAirbrushFilter:includeAirbrushFilter];
         }
     }
     
     // default (normal. no FX).
-    // NOTE: 1 index is simply because that's how this confusing class was designed
-    // for some reason. the index will be passed through the filterIndexWithWrapping
-    // method which will decrement it to 0 (which is the actual index of normal).
-    // this is the same reason for using (i + 1) in the line above
-    return [self filterGroupAtIndex:1 includeAirbrushFilter:includeAirbrushFilter];
+    return [self filterGroupForType:VideoFilterTypeNormal includeAirbrushFilter:includeAirbrushFilter];
 }
 
-- (GPUImageFilterGroup *)filterGroupWithName:(NSString *)filterName
-                              flipHorizontal:(BOOL)flipHorizontal {
-    GPUImageFilterGroup *result = [self filterGroupWithFilterNames:@[filterName]];
-    if (flipHorizontal) {
-        NSArray *filters = result.initialFilters;
-        if (filters.count > 0) {
-            GPUImageFilter *lastFilter = filters[filters.count - 1];
-            [lastFilter setInputRotation:kGPUImageFlipHorizonal atIndex:0];
-        }
-    }
-    return result;
-}
-
-- (GPUImageFilterGroup *)filterGroupAtIndex:(NSUInteger)index {
-    return [self filterGroupAtIndex:index includeAirbrushFilter:NO];
-}
-
-- (GPUImageFilterGroup *)filterGroupAtIndex:(NSUInteger)index includeAirbrushFilter:(BOOL)includeAirbrushFilter {
+- (GPUImageFilterGroup *)filterGroupForType:(VideoFilterType)videoFilterType includeAirbrushFilter:(BOOL)includeAirbrushFilter {
 
     GPUImageFilterGroup *group = [[GPUImageFilterGroup alloc] init];
 
     // Chain filters together
 
-    NSMutableArray *filters = [[self filtersWithIndex:[self filterIndexWithWrapping:index]] mutableCopy];
+    NSMutableArray *filters = [[self filtersWithType:videoFilterType] mutableCopy];
     if (includeAirbrushFilter) {
         [filters insertObject:[self createAirbrushFilter] atIndex:0];
     }
@@ -541,9 +502,11 @@ static const CGFloat kReferenceHeight = 480;
     [filterGroup setInitialFilters:@[firstLeftFilter, firstRightFilter]];
 }
 
-- (GPUImageFilterGroup *)splitFilterGroupAtIndex:(NSUInteger)index airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
+- (GPUImageFilterGroup *)splitFilterGroupForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
     
-    GPUImageFilterGroup *filterGroup = self.filters[index];
+    GPUImageFilterGroup *filterGroup = [self.filters objectForKey:@(videoFilterType)];
+    GPUImageFilterGroup *airbrushGroup = [self.filters objectForKey:@(self.currentAirbrushFilterType)];
+    
     // Make sure the rotation of the initial filters are reset
     for ( int i = 0; i < filterGroup.initialFilters.count; i++ )
     {
@@ -555,14 +518,14 @@ static const CGFloat kReferenceHeight = 480;
     // Update the filter group to include/exclude airbrush filter if needed
     if (includeAirbrush) {
         GPUImageFilterGroup *airbrushFilter = airbrushFilterType == AirbrushFilterTypeSimple ? self.splitSimpleAirbrushFilter : self.splitComplexAirbrushFilter;
-        if (self.currentAirbrushGroupIndex != NSNotFound) {
-            GPUImageFilterGroup *currentAirbrushFilterGroup =(GPUImageFilterGroup *) self.filters[self.currentAirbrushGroupIndex];
+        if (self.currentAirbrushFilterType != NSNotFound) {
+            GPUImageFilterGroup *currentAirbrushFilterGroup = airbrushGroup;
             GPUImageFilterGroup *currentAirbrushFilter =(GPUImageFilterGroup *) [currentAirbrushFilterGroup filterAtIndex:0];
-            if (self.currentAirbrushGroupIndex != index || airbrushFilter != currentAirbrushFilter)
+            if (self.currentAirbrushFilterType != videoFilterType || airbrushFilter != currentAirbrushFilter)
             {
                 [self removeAirbrushFilterFromSplitFilterGroup:currentAirbrushFilterGroup];
-                [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:self.filters[index]];
-                self.currentAirbrushGroupIndex = index;
+                [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:filterGroup];
+                self.currentAirbrushFilterType = videoFilterType;
             }
             else
             {
@@ -571,17 +534,17 @@ static const CGFloat kReferenceHeight = 480;
         }
         else
         {
-            [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:self.filters[index]];
-            self.currentAirbrushGroupIndex = index;
+            [self addAirbrushFilter:airbrushFilter toSplitFilterGroup:filterGroup];
+            self.currentAirbrushFilterType = videoFilterType;
         }
     } else {
-        if (self.currentAirbrushGroupIndex != NSNotFound) {
-            [self removeAirbrushFilterFromSplitFilterGroup:self.filters[self.currentAirbrushGroupIndex]];
-            self.currentAirbrushGroupIndex = NSNotFound;
+        if (self.currentAirbrushFilterType != NSNotFound) {
+            [self removeAirbrushFilterFromSplitFilterGroup:airbrushGroup];
+            self.currentAirbrushFilterType = NSNotFound;
         }
     }
     
-    return self.filters[index];
+    return filterGroup;
 }
 
 @end

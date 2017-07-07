@@ -43,17 +43,10 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 + (VideoFilterManager *)sharedInstance;
 
 // Filter name to send to server and map to localized string
-- (NSString*)filterNameAtIndex:(NSUInteger)index;
 - (NSString *)filterNameForType:(VideoFilterType)videoFilterType;
 
-// Filter index based on filter name
-- (NSUInteger)filterIndexWithName:(NSString *)filterName;
-// Finds the first filter name in the array that matches a VideoFilterType,
-// and returns the index of that filter type.
-- (NSUInteger)filterIndexOfFirstMatch:(NSArray<NSString *> *)filterNames;
-
 // Check if fiter at specific index is vip
-- (BOOL)isVIPOnlyAtIndex:(NSUInteger)index;
+- (BOOL)isVIPOnlyFilter:(VideoFilterType)videoFilterType;
 
 // The names of the filters as strings.
 @property (nonatomic, strong) NSArray *filterList;
@@ -63,9 +56,6 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 /*
  * Server
  */
-- (GPUImageFilterGroup*)filterGroupWithName:(NSString *)filterName
-                             flipHorizontal:(BOOL)flipHorizontal;
-
 - (GPUImageFilterGroup*)filterGroupWithFilterNames:(NSArray<NSString *> *)filterNames;
 
 /*
@@ -73,6 +63,6 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
  */
 
 // Return two combined filters for swiping
-- (GPUImageFilterGroup*)splitFilterGroupAtIndex:(NSUInteger)index airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
+- (GPUImageFilterGroup*)splitFilterGroupForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
 
 @end
