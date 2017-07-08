@@ -12,7 +12,9 @@
 extern NSString * const kAirbrushFilterIdentifier;
 
 typedef NS_ENUM(NSInteger, VideoFilterType) {
-    VideoFilterTypeNormal = 0,
+    VideoFilterTypeUnknown,
+    
+    VideoFilterTypeNormal,
     VideoFilterTypeSepia,
     VideoFilterTypeBlackWhite,
     VideoFilterTypeVintage,
@@ -27,6 +29,7 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 };
 
 
+// todo: delete
 // Transient class where it's only purposes is to store the filter list and vip filter's list
 @interface VideoFilterVariables : NSObject
 

@@ -53,7 +53,7 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
         shared = [[VideoFilterManager alloc] init];
         shared.filterList = [VideoFilterVariables sharedInstance].filterList;
         shared.vipFilters = [VideoFilterVariables sharedInstance].vipFilters;
-        shared.currentAirbrushFilterType = NSNotFound;
+        shared.currentAirbrushFilterType = VideoFilterTypeUnknown;
     });
     
     return shared;
@@ -402,7 +402,7 @@ static const CGFloat kReferenceHeight = 480;
 }
 
 - (BOOL)isVIPOnlyFilter:(VideoFilterType)videoFilterType {
-    return ([self.vipFilters indexOfObject:[self filterNameForType:videoFilterType]] != NSNotFound);
+    return ([self.vipFilters indexOfObject:[self filterNameForType:videoFilterType]] != VideoFilterTypeUnknown);
 }
 
 - (VideoFilterType)filterTypeForName:(NSString *)videoFilterName {
@@ -416,7 +416,7 @@ static const CGFloat kReferenceHeight = 480;
     };
 
     NSNumber *typeNum = filterNameTypeMap[videoFilterName];
-    return typeNum ? (VideoFilterType)typeNum.integerValue : -1;
+    return (VideoFilterType)typeNum.integerValue;
 }
 
 - (GPUImageFilterGroup *)filterGroupWithFilterNames:(NSArray<NSString *> *)filterNames {
@@ -518,7 +518,7 @@ static const CGFloat kReferenceHeight = 480;
     // Update the filter group to include/exclude airbrush filter if needed
     if (includeAirbrush) {
         GPUImageFilterGroup *airbrushFilter = airbrushFilterType == AirbrushFilterTypeSimple ? self.splitSimpleAirbrushFilter : self.splitComplexAirbrushFilter;
-        if (self.currentAirbrushFilterType != NSNotFound) {
+        if (self.currentAirbrushFilterType != VideoFilterTypeUnknown) {
             GPUImageFilterGroup *currentAirbrushFilterGroup = airbrushGroup;
             GPUImageFilterGroup *currentAirbrushFilter =(GPUImageFilterGroup *) [currentAirbrushFilterGroup filterAtIndex:0];
             if (self.currentAirbrushFilterType != videoFilterType || airbrushFilter != currentAirbrushFilter)
@@ -538,9 +538,9 @@ static const CGFloat kReferenceHeight = 480;
             self.currentAirbrushFilterType = videoFilterType;
         }
     } else {
-        if (self.currentAirbrushFilterType != NSNotFound) {
+        if (self.currentAirbrushFilterType != VideoFilterTypeUnknown) {
             [self removeAirbrushFilterFromSplitFilterGroup:airbrushGroup];
-            self.currentAirbrushFilterType = NSNotFound;
+            self.currentAirbrushFilterType = VideoFilterTypeUnknown;
         }
     }
     
