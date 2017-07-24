@@ -402,7 +402,7 @@ static const CGFloat kReferenceHeight = 480;
 }
 
 - (BOOL)isVIPOnlyFilter:(VideoFilterType)videoFilterType {
-    return ([self.vipFilters indexOfObject:[self filterNameForType:videoFilterType]] != VideoFilterTypeUnknown);
+    return [self.vipFilters containsObject:@(videoFilterType)];
 }
 
 - (VideoFilterType)filterTypeForName:(NSString *)videoFilterName {
