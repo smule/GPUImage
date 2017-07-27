@@ -180,7 +180,7 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     return (VideoFilterType)typeNum.integerValue;
 }
 
-- (GPUImageOutput<GPUImageInput> *)filterForFilterNames:(NSArray<NSString *> *)filterNames {
+- (GPUImageOutput<GPUImageInput> *)filterWithFilterNames:(NSArray<NSString *> *)filterNames {
     
     BOOL includeAirbrushFilter = [filterNames containsObject:kAirbrushFilterIdentifier];
     NSString *lensFilterName = [filterNames lastObject];
@@ -198,15 +198,28 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
     return [self filterGroupForType:VideoFilterTypeNormal includeAirbrushFilter:includeAirbrushFilter];
 }
 
-- (GPUImageOutput <GPUImageInput> *)filterGroupForType:(VideoFilterType)videoFilterType includeAirbrushFilter:(BOOL)includeAirbrushFilter {
+- (GPUImageOutput <GPUImageInput> *)filterGroupForType:(VideoFilterType)videoFilterType
+                                 includeAirbrushFilter:(BOOL)includeAirbrushFilter {
     [self configureGalleryForVideoFilterType:videoFilterType];
     [self.filterGallery removeAllTargets];
     self.filterGallery.airbrushFilterType = includeAirbrushFilter ? AirbrushFilterTypeComplex : AirbrushFilterTypeNone;
     return self.filterGallery;
 }
 
-- (GPUImageOutput<GPUImageInput> *)filterForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
+- (GPUImageOutput<GPUImageInput> *)filterWithType:(VideoFilterType)videoFilterType
+                               airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
     [self configureGalleryForVideoFilterType:videoFilterType];
+    [self.filterGallery removeAllTargets];
+    self.filterGallery.airbrushFilterType = airbrushFilterType;
+    [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+    return self.filterGallery;
+}
+
+- (GPUImageOutput<GPUImageInput> *)filterWithVideoStyle:(ALYCEVideoStyle)videoStyle
+                                            colorFilter:(ALYCEColorFilter)colorFilter
+                                     airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
+    self.filterGallery.videoStyle = videoStyle;
+    self.filterGallery.colorFilter = colorFilter;
     [self.filterGallery removeAllTargets];
     self.filterGallery.airbrushFilterType = airbrushFilterType;
     [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];

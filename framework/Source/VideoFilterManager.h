@@ -50,8 +50,17 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
 // The name of the VIP filters as strings.
 @property (nonatomic, strong) NSArray *vipFilters;
 
-- (GPUImageFilterGroup*)filterForFilterNames:(NSArray<NSString *> *)filterNames;
+- (GPUImageOutput<GPUImageInput> *)filterWithFilterNames:(NSArray<NSString *> *)filterNames;
 
-- (GPUImageFilterGroup*)filterForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
+// Old deprecated API using VideoFilterType.
+// TODO: Remove once we have switched over to the
+// filterWithVideoStyle:colorFilter:airbrushFilterType: method.
+- (GPUImageOutput<GPUImageInput> *)filterWithType:(VideoFilterType)videoFilterType
+                               airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
+
+
+- (GPUImageOutput<GPUImageInput> *)filterWithVideoStyle:(ALYCEVideoStyle)videoStyle
+                                            colorFilter:(ALYCEColorFilter)colorFilter
+                                     airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
 
 @end
