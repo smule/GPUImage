@@ -448,4 +448,9 @@ void dataProviderUnlockCallback (void *info, const void *data, size_t size)
     return _texture;
 }
 
+- (GLuint)framebufferId
+{
+    return framebuffer;
+}
+
 @end

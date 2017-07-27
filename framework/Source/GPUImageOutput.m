@@ -359,9 +359,38 @@ void reportAvailableMemoryForGPUImage(NSString *tag)
     return processedImage;
 }
 
+- (UIImage *)imageByFilteringImage1:(UIImage *)image1 image2:(UIImage *)image2
+{
+    CGImageRef image = [self newCGImageByFilteringCGImage1:[image1 CGImage] CGImage2:[image2 CGImage]];
+    UIImage *processedImage = [UIImage imageWithCGImage:image scale:[image1 scale] orientation:[image1 imageOrientation]];
+    CGImageRelease(image);
+    return processedImage;
+    
+}
+
 - (CGImageRef)newCGImageByFilteringImage:(UIImage *)imageToFilter
 {
     return [self newCGImageByFilteringCGImage:[imageToFilter CGImage]];
+}
+
+- (CGImageRef)newCGImageByFilteringCGImage1:(CGImageRef)imageToFilter1 CGImage2:(CGImageRef)imageToFilter2
+{
+    GPUImagePicture *stillImage1Source = [[GPUImagePicture alloc] initWithCGImage:imageToFilter1];
+    GPUImagePicture *stillImage2Source = [[GPUImagePicture alloc] initWithCGImage:imageToFilter2];
+    
+    [self useNextFrameForImageCapture];
+    [stillImage1Source addTarget:(id<GPUImageInput>)self];
+    [stillImage2Source addTarget:(id<GPUImageInput>)self];
+    [stillImage1Source processImage];
+    [stillImage2Source processImage];
+    
+    CGImageRef processedImage = [self newCGImageFromCurrentlyProcessedOutput];
+    
+    [stillImage1Source removeTarget:(id<GPUImageInput>)self];
+    [stillImage2Source removeTarget:(id<GPUImageInput>)self];
+    
+    return processedImage;
+    
 }
 
 #else

@@ -30,6 +30,7 @@ typedef struct GPUTextureOptions {
 @property(readonly) GLuint texture;
 @property(readonly) BOOL missingFramebuffer;
 @property(readwrite) NSString* frameBufferHash;
+@property (nonatomic, readonly) GLuint framebufferId;
 
 // Initialization and teardown
 - (id)initWithSize:(CGSize)framebufferSize;

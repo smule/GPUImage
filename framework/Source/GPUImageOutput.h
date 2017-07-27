@@ -115,7 +115,9 @@ void reportAvailableMemoryForGPUImage(NSString *tag);
 - (UIImage *)imageFromCurrentFramebuffer;
 - (UIImage *)imageFromCurrentFramebufferWithOrientation:(UIImageOrientation)imageOrientation;
 - (UIImage *)imageByFilteringImage:(UIImage *)imageToFilter;
+- (UIImage *)imageByFilteringImage1:(UIImage *)image1 image2:(UIImage *)image2;
 - (CGImageRef)newCGImageByFilteringImage:(UIImage *)imageToFilter;
+- (CGImageRef)newCGImageByFilteringCGImage1:(CGImageRef)imageToFilter1 CGImage2:(CGImageRef)imageToFilter2;
 #else
 - (NSImage *)imageFromCurrentFramebuffer;
 - (NSImage *)imageFromCurrentFramebufferWithOrientation:(UIImageOrientation)imageOrientation;

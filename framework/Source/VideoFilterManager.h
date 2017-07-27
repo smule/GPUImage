@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "GPUImageFilterGallery.h"
 @class GPUImageFilterGroup;
 
 extern NSString * const kAirbrushFilterIdentifier;
@@ -19,15 +20,8 @@ typedef NS_ENUM(NSInteger, VideoFilterType) {
     VideoFilterTypeBlackWhite,
     VideoFilterTypeVintage,
     VideoFilterTypeSelfie,
-    VideoFilterTypeFightClub,
+    VideoFilterTypeFightClub
 };
-
-typedef NS_ENUM(NSInteger, AirbrushFilterType) {
-    AirbrushFilterTypeNone,
-    AirbrushFilterTypeSimple,
-    AirbrushFilterTypeComplex
-};
-
 
 // todo: delete
 // Transient class where it's only purposes is to store the filter list and vip filter's list
@@ -56,16 +50,8 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 // The name of the VIP filters as strings.
 @property (nonatomic, strong) NSArray *vipFilters;
 
-/*
- * Server
- */
-- (GPUImageFilterGroup*)filterGroupWithFilterNames:(NSArray<NSString *> *)filterNames;
+- (GPUImageFilterGroup*)filterForFilterNames:(NSArray<NSString *> *)filterNames;
 
-/*
- * Client
- */
-
-// Return two combined filters for swiping
-- (GPUImageFilterGroup*)splitFilterGroupForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
+- (GPUImageFilterGroup*)filterForType:(VideoFilterType)videoFilterType airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
 
 @end
