@@ -200,29 +200,35 @@ NSString * const kAirbrushFilterIdentifier = @"airbrush";
 
 - (GPUImageOutput <GPUImageInput> *)filterGroupForType:(VideoFilterType)videoFilterType
                                  includeAirbrushFilter:(BOOL)includeAirbrushFilter {
-    [self configureGalleryForVideoFilterType:videoFilterType];
-    [self.filterGallery removeAllTargets];
-    self.filterGallery.airbrushFilterType = includeAirbrushFilter ? AirbrushFilterTypeComplex : AirbrushFilterTypeNone;
+    runSynchronouslyOnVideoProcessingQueue(^{
+        [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+        [self configureGalleryForVideoFilterType:videoFilterType];
+        [self.filterGallery removeAllTargets];
+        self.filterGallery.airbrushFilterType = includeAirbrushFilter ? AirbrushFilterTypeComplex : AirbrushFilterTypeNone;
+    });
     return self.filterGallery;
 }
 
 - (GPUImageOutput<GPUImageInput> *)filterWithType:(VideoFilterType)videoFilterType
                                airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
-    [self configureGalleryForVideoFilterType:videoFilterType];
-    [self.filterGallery removeAllTargets];
-    self.filterGallery.airbrushFilterType = airbrushFilterType;
-    [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+    runSynchronouslyOnVideoProcessingQueue(^{
+        [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+        [self configureGalleryForVideoFilterType:videoFilterType];
+        self.filterGallery.airbrushFilterType = airbrushFilterType;
+    });
     return self.filterGallery;
 }
 
 - (GPUImageOutput<GPUImageInput> *)filterWithVideoStyle:(ALYCEVideoStyle)videoStyle
                                             colorFilter:(ALYCEColorFilter)colorFilter
                                      airbrushFilterType:(AirbrushFilterType)airbrushFilterType {
-    self.filterGallery.videoStyle = videoStyle;
-    self.filterGallery.colorFilter = colorFilter;
-    [self.filterGallery removeAllTargets];
-    self.filterGallery.airbrushFilterType = airbrushFilterType;
-    [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+    runSynchronouslyOnVideoProcessingQueue(^{
+        [self.filterGallery setInputRotation:kGPUImageNoRotation atIndex:0];
+        self.filterGallery.videoStyle = videoStyle;
+        self.filterGallery.colorFilter = colorFilter;
+        [self.filterGallery removeAllTargets];
+        self.filterGallery.airbrushFilterType = airbrushFilterType;
+    });
     return self.filterGallery;
 }
 

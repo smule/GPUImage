@@ -239,8 +239,6 @@ NSString *const kGPUImageThreeInputTextureVertexShaderString = SHADER_STRING
         return;
     }
     
-    BOOL updatedMovieFrameOppositeStillImage = NO;
-    
     if (textureIndex == 0)
     {
         hasReceivedFirstFrame = YES;
@@ -252,14 +250,6 @@ NSString *const kGPUImageThreeInputTextureVertexShaderString = SHADER_STRING
         if (thirdFrameCheckDisabled)
         {
             hasReceivedThirdFrame = YES;
-        }
-        
-        if (!CMTIME_IS_INDEFINITE(frameTime))
-        {
-            if CMTIME_IS_INDEFINITE(secondFrameTime)
-            {
-                updatedMovieFrameOppositeStillImage = YES;
-            }
         }
     }
     else if (textureIndex == 1)
@@ -274,14 +264,6 @@ NSString *const kGPUImageThreeInputTextureVertexShaderString = SHADER_STRING
         {
             hasReceivedThirdFrame = YES;
         }
-
-        if (!CMTIME_IS_INDEFINITE(frameTime))
-        {
-            if CMTIME_IS_INDEFINITE(firstFrameTime)
-            {
-                updatedMovieFrameOppositeStillImage = YES;
-            }
-        }
     }
     else
     {
@@ -295,18 +277,10 @@ NSString *const kGPUImageThreeInputTextureVertexShaderString = SHADER_STRING
         {
             hasReceivedSecondFrame = YES;
         }
-        
-        if (!CMTIME_IS_INDEFINITE(frameTime))
-        {
-            if CMTIME_IS_INDEFINITE(firstFrameTime)
-            {
-                updatedMovieFrameOppositeStillImage = YES;
-            }
-        }
     }
     
     // || (hasReceivedFirstFrame && secondFrameCheckDisabled) || (hasReceivedSecondFrame && firstFrameCheckDisabled)
-    if ((hasReceivedFirstFrame && hasReceivedSecondFrame && hasReceivedThirdFrame) || updatedMovieFrameOppositeStillImage)
+    if ((hasReceivedFirstFrame && hasReceivedSecondFrame && hasReceivedThirdFrame))
     {
         static const GLfloat imageVertices[] = {
             -1.0f, -1.0f,

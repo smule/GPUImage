@@ -18,8 +18,8 @@
     bool isEndProcessing;
 }
 
-@property (nonatomic, strong) GPUImageFilterGroup *simpleAirbrushFilterGroup;
-@property (nonatomic, strong) GPUImageFilterGroup *complexAirbrushFilterGroup;
+@property (nonatomic, strong) GPUImageOutput<GPUImageInput> *simpleAirbrushFilterGroup;
+@property (nonatomic, strong) GPUImageOutput<GPUImageInput> *complexAirbrushFilterGroup;
 @property (nonatomic, strong) GPUImageALYCEFilter *alyceFilter;
 @property (nonatomic, strong) ALYCEClientPreviewRenderer *renderer;
 
@@ -132,7 +132,7 @@ static const CGFloat kReferenceHeight = 480;
     self.alyceFilter.videoStyle = videoStyle;
 }
 
-- (GPUImageFilterGroup *)createSimpleAirbrushFilter
+- (GPUImageOutput<GPUImageInput> *)createSimpleAirbrushFilter
 {
     static const CGFloat scaleDownFactor = 2;
     GPUImageFilterGroup * edgePreservingBlur = [[GPUImageFilterGroup alloc] init];
@@ -167,7 +167,7 @@ static const CGFloat kReferenceHeight = 480;
     return edgePreservingBlur;
 }
 
-- (GPUImageFilterGroup *)createComplexAirbrushFilter
+- (GPUImageOutput<GPUImageInput> *)createComplexAirbrushFilter
 {
     CGFloat scale = 3.0;
     int edgerad = 3.0;
@@ -271,12 +271,12 @@ static const CGFloat kReferenceHeight = 480;
 #pragma mark -
 #pragma mark Still image processing
 
-- (void)useNextFrameForImageCapture;
+- (void)useNextFrameForImageCapture
 {
     [self.alyceFilter useNextFrameForImageCapture];
 }
 
-- (CGImageRef)newCGImageFromCurrentlyProcessedOutput;
+- (CGImageRef)newCGImageFromCurrentlyProcessedOutput
 {
     return [self.alyceFilter newCGImageFromCurrentlyProcessedOutput];
 }
@@ -459,6 +459,7 @@ static const CGFloat kReferenceHeight = 480;
     [self.renderer setCurrentTime:-1.0f];
     [self setUserInputIndex:0];
     [self.renderer setupLoopingTimedLayouts];
+    [[GPUImageContext sharedFramebufferCache] purgeAllUnassignedFramebuffers];
 }
 
 @end
