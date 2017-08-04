@@ -17,6 +17,9 @@
 @property (nonatomic) BOOL hasReceivedSecondFrame;
 @property (nonatomic) CMTime currentFrameTime;
 
+@property (nonatomic) CGSize firstInputTextureSize;
+@property (nonatomic) CGSize secondInputTextureSize;
+
 @property (nonatomic, strong) ALYCEClientPreviewRenderer *renderer;
 @property (nonatomic) float vocalsIntensity;
 
@@ -256,6 +259,8 @@
     if (CGSizeEqualToSize(newSize, CGSizeZero))
     {
         inputTextureSize = CGSizeZero;
+        self.firstInputTextureSize = CGSizeZero;
+        self.secondInputTextureSize = CGSizeZero;
         self.hasSetFirstTexture = NO;
         self.hasSetSecondTexture = NO;
         
@@ -272,10 +277,17 @@
     }
     else
     {
-        if (newSize.width > inputTextureSize.width)
+        if (textureIndex == 0)
         {
-            inputTextureSize = newSize;
+            self.firstInputTextureSize = newSize;
         }
+        else
+        {
+            self.secondInputTextureSize = newSize;
+        }
+        
+        
+        inputTextureSize = self.firstInputTextureSize.width > self.secondInputTextureSize.width ? self.firstInputTextureSize : self.secondInputTextureSize;
     }
 }
 
