@@ -29,6 +29,10 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
  * GPUImage filter chains. Users of this class should do that to hook up camera input,
  * and camera preview in an OpenGL view.
  *
+ * Since the filter gallery is a singleton it's important that it's only hooked up to one
+ * filter chain at any given time. However, the Sing! iOS app is designed in such a way that
+ * there are never any conflicts about who wants to use the filter gallery in a filter chain.
+ *
  * Changing the properties of the filter gallery changes the appearance of the video rendering.
  * The most important properties are videoStyle, colorFilter and airbrushFilterType which will
  * dramatically change the look of the preview. Additionally, some properties are configurable
