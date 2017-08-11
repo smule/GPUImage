@@ -35,8 +35,7 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
  *
  * Changing the properties of the filter gallery changes the appearance of the video rendering.
  * The most important properties are videoStyle, colorFilter and airbrushFilterType which will
- * dramatically change the look of the preview. Additionally, some properties are configurable
- * via the renderer instance variable.
+ * dramatically change the look of the preview.
  */
 @interface GPUImageFilterGallery : GPUImageOutput <GPUImageInput>
 
