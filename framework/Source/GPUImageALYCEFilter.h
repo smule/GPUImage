@@ -2,16 +2,13 @@
 #import "GPUImageFilterGroup.h"
 #import "ALYCEVideoStyle.h"
 #import "ALYCEColorFilter.h"
+#import "ALYCERendererState.h"
 
 @class ALYCEClientPreviewRenderer;
 
 @interface GPUImageALYCEFilter : GPUImageOutput <GPUImageInput>
 
-- (id)initWithRenderer:(ALYCEClientPreviewRenderer *)renderer;
-@property (nonatomic, copy) float (^currentRMSBlock)();
-@property (nonatomic) ALYCEVideoStyle videoStyle;
-@property (nonatomic) ALYCEColorFilter colorFilter;
-@property (nonatomic) BOOL hasReceivedFrame;
+- (id)initWithRenderer:(ALYCEClientPreviewRenderer *)renderer rendererState:(ALYCERendererState *)rendererState;
 - (void)resetForLivePreview;
 
 @end

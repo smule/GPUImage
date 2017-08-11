@@ -22,6 +22,7 @@
 @property (nonatomic, strong) GPUImageOutput<GPUImageInput> *complexAirbrushFilterGroup;
 @property (nonatomic, strong) GPUImageALYCEFilter *alyceFilter;
 @property (nonatomic, strong) ALYCEClientPreviewRenderer *renderer;
+@property (nonatomic, strong) ALYCERendererState *rendererState;
 
 @end
 
@@ -38,11 +39,51 @@
     return shared;
 }
 
+- (void)setCurrentTime:(NSTimeInterval)currentTime
+{
+    [self.rendererState setCurrentTime:currentTime];
+}
+
+- (NSTimeInterval)currentTime
+{
+    return [self.rendererState getCurrentTime];
+}
+
+- (void)setRenderOnlyColorFilter:(BOOL)renderOnlyColorFilter
+{
+    [self.rendererState setRenderOnlyColorFilter:renderOnlyColorFilter];
+}
+
+- (BOOL)renderOnlyColorFilter
+{
+    return [self.rendererState getRenderOnlyColorFilter];
+}
+
+- (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha
+{
+    [self.renderer runSmoothingEffectAnimation:animationDuration particleAlpha:particleAlpha];
+}
+
+- (void)clearTimedLayouts
+{
+    [self.rendererState clearTimedLayouts];
+}
+
+- (void)setupLoopingTimedLayouts
+{
+    [self.rendererState setupLoopingTimedLayouts];
+}
+
+- (void)addTimedLayout:(ALYCETimedLayoutType)type duration:(NSTimeInterval)duration
+{
+    [self.rendererState addTimedLayout:type duration:duration];
+}
+
 - (void)setUserInputIndex:(NSUInteger)userInputIndex
 {
     runSynchronouslyOnVideoProcessingQueue(^{
         _userInputIndex = userInputIndex;
-        [self.renderer setUserInputIndex:(int32_t)userInputIndex];
+        [self.rendererState setUserInputIndex:(int32_t)userInputIndex];
         [self updateAirbrushTargets];
     });
 }
@@ -85,6 +126,9 @@
         runSynchronouslyOnVideoProcessingQueue(^{
             self.inputCount = 1;
             self.renderer = [ALYCEClientPreviewRenderer instantiate];
+            self.rendererState = [ALYCERendererState instantiate];
+            [self.rendererState setProcessingWidth:360];
+            
             isEndProcessing = NO;
             NSBundle *alyceBundle = [NSBundle bundleWithPath:[[NSBundle mainBundle] pathForResource:@"ALYCE_theme_segments" ofType:@"bundle"]];
             
@@ -105,12 +149,7 @@
             self.simpleAirbrushFilterGroup = [self createSimpleAirbrushFilter];
             self.complexAirbrushFilterGroup = [self createComplexAirbrushFilter];
             
-            self.alyceFilter = [[GPUImageALYCEFilter alloc] initWithRenderer:self.renderer];
-            
-            __weak GPUImageFilterGallery *weakSelf = self;
-            self.alyceFilter.currentRMSBlock = ^{
-                return weakSelf.currentRMSBlock ? weakSelf.currentRMSBlock() : 0.0f;
-            };
+            self.alyceFilter = [[GPUImageALYCEFilter alloc] initWithRenderer:self.renderer rendererState:self.rendererState];
         });
     }
     
@@ -122,14 +161,22 @@ static const CGFloat kReferenceHeight = 480;
 
 - (void)setColorFilter:(ALYCEColorFilter)colorFilter
 {
-    _colorFilter = colorFilter;
-    self.alyceFilter.colorFilter = colorFilter;
+    [self.rendererState setColorFilter:colorFilter];
+}
+
+- (ALYCEColorFilter)colorFilter
+{
+    return [self.rendererState getColorFilter];
 }
 
 - (void)setVideoStyle:(ALYCEVideoStyle)videoStyle
 {
-    _videoStyle = videoStyle;
-    self.alyceFilter.videoStyle = videoStyle;
+    [self.rendererState setVideoStyle:videoStyle];
+}
+
+- (ALYCEVideoStyle)videoStyle
+{
+    return [self.rendererState getVideoStyle];
 }
 
 - (GPUImageOutput<GPUImageInput> *)createSimpleAirbrushFilter
@@ -321,6 +368,11 @@ static const CGFloat kReferenceHeight = 480;
     return [_alyceFilter frameProcessingCompletionBlock];
 }
 
+- (float)boostRMS:(float)rms
+{
+    return MIN(1.0f, 2 * sqrt(rms));
+}
+
 #pragma mark -
 #pragma mark GPUImageInput protocol
 
@@ -329,6 +381,15 @@ static const CGFloat kReferenceHeight = 480;
     if (textureIndex > 0 && _inputCount < 2)
     {
         return;
+    }
+    
+    if (self.inputCount == 1 ||  textureIndex != self.userInputIndex || self.airbrushFilterType == AirbrushFilterTypeNone)
+    {
+        // This frame will go to the alyce filter so let's update vocals intensity using a low-pass filter.
+        float newVocalsIntensitySample = [self boostRMS:self.currentRMSBlock ? self.currentRMSBlock() : 0.0f];
+        float oldVocalsIntensity = [self.rendererState getVocalsIntensity];
+        float newVocalsIntensity = oldVocalsIntensity + 0.3f * (newVocalsIntensitySample - oldVocalsIntensity);
+        [self.rendererState setVocalsIntensity:newVocalsIntensity];
     }
     
     if (textureIndex == self.userInputIndex)
@@ -456,9 +517,9 @@ static const CGFloat kReferenceHeight = 480;
 - (void)resetForLivePreview
 {
     [self.alyceFilter resetForLivePreview];
-    [self.renderer setCurrentTime:-1.0f];
+    [self.rendererState setCurrentTime:-1.0f];
     [self setUserInputIndex:0];
-    [self.renderer setupLoopingTimedLayouts];
+    [self.rendererState setupLoopingTimedLayouts];
     [[GPUImageContext sharedFramebufferCache] purgeAllUnassignedFramebuffers];
 }
 

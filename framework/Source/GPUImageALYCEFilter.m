@@ -21,21 +21,22 @@
 @property (nonatomic) CGSize secondInputTextureSize;
 
 @property (nonatomic, strong) ALYCEClientPreviewRenderer *renderer;
-@property (nonatomic) float vocalsIntensity;
+@property (nonatomic, strong) ALYCERendererState *rendererState;
+@property (nonatomic, strong) NSObject *dummyAssetManager;
 
 @end
 
 @implementation GPUImageALYCEFilter
 
-- (id)initWithRenderer:(ALYCEClientPreviewRenderer *)renderer
+- (id)initWithRenderer:(ALYCEClientPreviewRenderer *)renderer rendererState:(ALYCERendererState *)rendererState
 {
     self = [super init];
-    
+
     if (self)
     {
         self.renderer = renderer;
-        self.videoStyle = ALYCEVideoStyleClassic;
-        self.colorFilter = ALYCEColorFilterNone;
+        self.rendererState = rendererState;
+        self.dummyAssetManager = [NSObject new];
         _imageCaptureSemaphore = dispatch_semaphore_create(0);
         dispatch_semaphore_signal(_imageCaptureSemaphore);
     }
@@ -118,11 +119,6 @@
             [outputFramebuffer lock];
         }
         
-        // Update vocals intensity using a low-pass filter
-        float newVocalsIntensity = [self boostRMS:self.currentRMSBlock ? self.currentRMSBlock() : 0.0f];
-        self.vocalsIntensity += 0.3f * (newVocalsIntensity - self.vocalsIntensity);
-        [self.renderer setVocalsIntensity:self.vocalsIntensity];
-        
         float timestampInSeconds = CMTIME_IS_VALID(self.currentFrameTime) && !CMTIME_IS_INDEFINITE(self.currentFrameTime) ? CMTimeGetSeconds(self.currentFrameTime) : -1.0f;
         ALYCERenderInput *input1 = [ALYCERenderInput RenderInputWithTextureId:self.firstInputFramebuffer.texture
                                                                         width:self.firstInputFramebuffer.size.width
@@ -143,11 +139,8 @@
                                                                       flipVertically:YES
                                                                     flipHorizontally:NO];
         
-        [self.renderer render:[NSObject new]
-         videoStyle:self.videoStyle
-        colorFilter:self.colorFilter
-              processingWidth:360
-             processingHeight:outputSize.height / outputSize.width * 360
+        [self.renderer render:self.dummyAssetManager
+                        state:self.rendererState
                        input1:input1
                        input2:input2
                        output:output];

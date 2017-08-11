@@ -11,7 +11,7 @@
 #import "ALYCEClientPreviewRenderer.h"
 #import "ALYCEVideoStyle.h"
 #import "ALYCEColorFilter.h"
-
+#import "ALYCETimedLayoutType.h"
 typedef NS_ENUM(NSInteger, AirbrushFilterType) {
     AirbrushFilterTypeNone,
     AirbrushFilterTypeSimple, // Should be used during singing. Not computationally intense.
@@ -64,18 +64,26 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
  */
 @property (nonatomic) AirbrushFilterType airbrushFilterType;
 /**
- * The underlying renderer. Wraps C++ OpenGL-based rendering code that is shared between iOS and Android.
- */
-@property (nonatomic, readonly) ALYCEClientPreviewRenderer *renderer;
-/**
  * Should be set to provide the filte gallery with the current RMS.
  * This is used to make video effects response to the vocals input of the user in real-time.
  */
 @property (nonatomic, copy) float (^currentRMSBlock)();
 
+@property (nonatomic) NSTimeInterval currentTime;
+
+@property (nonatomic) BOOL renderOnlyColorFilter;
+
 /**
  * Resets all internal state to the live preview config.
  */
 - (void)resetForLivePreview;
+
+- (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha;
+
+- (void)clearTimedLayouts;
+
+- (void)setupLoopingTimedLayouts;
+
+- (void)addTimedLayout:(ALYCETimedLayoutType)type duration:(NSTimeInterval)duration;
 
 @end
