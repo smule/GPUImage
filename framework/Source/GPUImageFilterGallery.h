@@ -77,6 +77,11 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
  */
 - (void)resetForLivePreview;
 
+/**
+ * Resets all internal state to the review screen config.
+ */
+- (void)resetForReviewScreen;
+
 - (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha;
 
 - (void)clearTimedLayouts;
