@@ -411,7 +411,7 @@ static const CGFloat kReferenceHeight = 480;
         @"sepia": @(VideoFilterTypeSepia),
         @"selfie": @(VideoFilterTypeSelfie),
         @"fight": @(VideoFilterTypeFightClub),
-        @"vintage": @(VideoFilterTypeVintage),
+        @"vintge": @(VideoFilterTypeVintage),
         @"bw": @(VideoFilterTypeBlackWhite)
     };
 
