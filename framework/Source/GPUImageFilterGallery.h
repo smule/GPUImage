@@ -85,6 +85,8 @@ typedef NS_ENUM(NSInteger, AirbrushFilterType) {
 - (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha;
 
 - (void)clearTimedLayouts;
+    
+- (void)convertAllLayoutsToDuet;
 
 - (void)setupLoopingTimedLayouts;
 

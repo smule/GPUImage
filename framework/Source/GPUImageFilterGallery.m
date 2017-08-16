@@ -103,6 +103,13 @@
     });
 }
 
+- (void)convertAllLayoutsToDuet
+{
+    runSynchronouslyOnVideoProcessingQueue(^{
+        [self.rendererState convertAllLayoutsToDuet];
+    });
+}
+
 - (void)updateAirbrushTargets
 {
     [self.simpleAirbrushFilterGroup removeAllTargets];
