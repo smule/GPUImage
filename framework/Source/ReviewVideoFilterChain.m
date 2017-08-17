@@ -112,6 +112,12 @@
 
 - (void)chainGPUImageMovieToFilterView:(BOOL)userIsLeft
 {
+    // There's nothing to do if we don't have a filter view
+    if (!_filterView)
+    {
+        return;
+    }
+    
     GPUImageOutput *prevFilter = _localFilterMovie;
     
     // put together the filter chain
