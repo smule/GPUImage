@@ -28,6 +28,8 @@
     
     // Store last frame so we can filter while paused
     CVPixelBufferRef lastFrame;
+    
+    CGSize sizeInFramebufferCacheHash;
 }
 
 - (void)processAsset;
@@ -744,11 +746,14 @@
 {
     [GPUImageContext setActiveShaderProgram:yuvConversionProgram];
 
-    if (frameBufferHash == nil)
+    CGSize framebufferSize = CGSizeMake(imageBufferWidth, imageBufferHeight);
+    // Get new hash if we don't have one or the framebuffer size has changed
+    if (frameBufferHash == nil || !CGSizeEqualToSize(framebufferSize, sizeInFramebufferCacheHash))
     {
         frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
+        sizeInFramebufferCacheHash = framebufferSize;
     }
-    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:frameBufferHash];
+    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:nil];
     [outputFramebuffer activateFramebuffer];
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

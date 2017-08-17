@@ -527,8 +527,6 @@ static const CGFloat kReferenceHeight = 480;
     [self.rendererState setCurrentTime:-1.0f];
     [self setUserInputIndex:0];
     [self.rendererState setupLoopingTimedLayouts];
-    // Purge framebuffers because the video preview size has probably changed.
-    [[GPUImageContext sharedFramebufferCache] purgeAllUnassignedFramebuffers];
 }
 
 - (void)resetForReviewScreen
@@ -536,8 +534,6 @@ static const CGFloat kReferenceHeight = 480;
     // Configure the filter gallery for the review screen
     [[GPUImageFilterGallery sharedInstance] setRenderOnlyColorFilter:NO];
     [[GPUImageFilterGallery sharedInstance] setCurrentTime:0.0f];
-    // Purge framebuffers because the video preview size has probably changed.
-    [[GPUImageContext sharedFramebufferCache] purgeAllUnassignedFramebuffers];
 }
 
 @end
