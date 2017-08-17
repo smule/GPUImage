@@ -753,7 +753,7 @@
         frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
         sizeInFramebufferCacheHash = framebufferSize;
     }
-    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:nil];
+    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:frameBufferHash];
     [outputFramebuffer activateFramebuffer];
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
