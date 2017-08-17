@@ -750,7 +750,7 @@
     // Get new hash if we don't have one or the framebuffer size has changed
     if (frameBufferHash == nil || !CGSizeEqualToSize(framebufferSize, sizeInFramebufferCacheHash))
     {
-        frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:CGSizeMake(imageBufferWidth, imageBufferHeight) textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
+        frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
         sizeInFramebufferCacheHash = framebufferSize;
     }
     outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO withHash:frameBufferHash];
