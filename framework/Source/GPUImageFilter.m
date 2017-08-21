@@ -298,13 +298,16 @@ NSString *const kGPUImagePassthroughFragmentShaderString = SHADER_STRING
     }
     
     [GPUImageContext setActiveShaderProgram:filterProgram];
-
-    if (frameBufferHash == nil)
+    
+    CGSize framebufferSize = [self sizeOfFBO];
+    // Get new hash if we don't have one or the framebuffer size has changed
+    if (frameBufferHash == nil || !CGSizeEqualToSize(framebufferSize, sizeInFramebufferCacheHash))
     {
-        frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:[self sizeOfFBO] textureOptions:self.outputTextureOptions onlyTexture:NO];
+        frameBufferHash = [[GPUImageContext sharedFramebufferCache]  hashForSize:framebufferSize textureOptions:[GPUImageFramebufferCache defaultTextureOptions] onlyTexture:NO];
+        sizeInFramebufferCacheHash = framebufferSize;
     }
 
-    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:[self sizeOfFBO] textureOptions:self.outputTextureOptions onlyTexture:NO withHash:frameBufferHash];
+    outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:framebufferSize textureOptions:self.outputTextureOptions onlyTexture:NO withHash:frameBufferHash];
     [outputFramebuffer activateFramebuffer];
     if (usingNextFrameForImageCapture)
     {

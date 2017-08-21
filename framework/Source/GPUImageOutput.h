@@ -50,6 +50,7 @@ void reportAvailableMemoryForGPUImage(NSString *tag);
     BOOL allTargetsWantMonochromeData;
     BOOL usingNextFrameForImageCapture;
     NSString *frameBufferHash;
+    CGSize sizeInFramebufferCacheHash;
 }
 
 @property(readwrite, nonatomic) BOOL shouldSmoothlyScaleOutput;
