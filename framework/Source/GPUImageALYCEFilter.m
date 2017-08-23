@@ -8,6 +8,8 @@
     dispatch_semaphore_t _imageCaptureSemaphore;
 }
 
+
+// GPUImage state management
 @property (nonatomic, strong) GPUImageFramebuffer *firstInputFramebuffer;
 @property (nonatomic, strong) GPUImageFramebuffer *secondInputFramebuffer;
 @property (nonatomic) BOOL isEndProcessing;
@@ -16,10 +18,10 @@
 @property (nonatomic) BOOL hasReceivedFirstFrame;
 @property (nonatomic) BOOL hasReceivedSecondFrame;
 @property (nonatomic) CMTime currentFrameTime;
-
 @property (nonatomic) CGSize firstInputTextureSize;
 @property (nonatomic) CGSize secondInputTextureSize;
 
+// ALYCE objects
 @property (nonatomic, strong) ALYCEClientPreviewRenderer *renderer;
 @property (nonatomic, strong) ALYCERendererState *rendererState;
 @property (nonatomic, strong) NSObject *dummyAssetManager;
@@ -28,14 +30,46 @@
 
 @implementation GPUImageALYCEFilter
 
-- (id)initWithRenderer:(ALYCEClientPreviewRenderer *)renderer rendererState:(ALYCERendererState *)rendererState
+#pragma mark - Life-cycle
+
++ (ALYCEClientPreviewRenderer *)sharedRenderer
+{
+    static ALYCEClientPreviewRenderer *renderer = nil;
+    static dispatch_once_t onceToken;
+    
+    dispatch_once(&onceToken, ^{
+        renderer = [ALYCEClientPreviewRenderer instantiate];
+        
+        NSBundle *alyceBundle = [NSBundle bundleWithPath:[[NSBundle mainBundle] pathForResource:@"ALYCE_theme_segments" ofType:@"bundle"]];
+        
+        NSString *configFilePath = [alyceBundle pathForResource:@"theme_segments/client_preview_config.json" ofType:nil];
+        if (!configFilePath)
+        {
+            NSLog(@"Couldn't find ALYCE client config file at: %@", configFilePath);
+        }
+        else
+        {
+            NSObject *dummyAssetManager = [NSObject new];
+            NSString *errorDescription = [renderer setup:dummyAssetManager configFilePath:configFilePath];
+            if (errorDescription.length > 0)
+            {
+                NSLog(@"Failed to setup ALYCE preview renderer: %@", errorDescription);
+            }
+        }
+    });
+    
+    return renderer;
+}
+
+- (id)init
 {
     self = [super init];
 
     if (self)
     {
-        self.renderer = renderer;
-        self.rendererState = rendererState;
+        self.renderer = [GPUImageALYCEFilter sharedRenderer];
+        self.rendererState = [ALYCERendererState instantiate];
+        [self.rendererState setProcessingWidth:360];
         self.dummyAssetManager = [NSObject new];
         _imageCaptureSemaphore = dispatch_semaphore_create(0);
         dispatch_semaphore_signal(_imageCaptureSemaphore);
@@ -68,6 +102,93 @@
 - (float)boostRMS:(float)rms
 {
     return MIN(1.0f, 2 * sqrt(rms));
+}
+
+#pragma mark - Renderer configuration
+
+- (void)setUserInputIndex:(NSUInteger)userInputIndex
+{
+    [self.rendererState setUserInputIndex:(int32_t)userInputIndex];
+}
+
+- (NSUInteger)userInputIndex
+{
+    return (NSUInteger)[self.rendererState getUserInputIndex];
+}
+
+- (void)setVideoStyle:(ALYCEVideoStyle)videoStyle
+{
+    [self.rendererState setVideoStyle:videoStyle];
+}
+
+- (ALYCEVideoStyle)videoStyle
+{
+    return [self.rendererState getVideoStyle];
+}
+
+- (void)setColorFilter:(ALYCEColorFilter)colorFilter
+{
+    [self.rendererState setColorFilter:colorFilter];
+}
+
+- (ALYCEColorFilter)colorFilter
+{
+    return [self.rendererState getColorFilter];
+}
+
+- (void)setSmoothingEffectType:(ALYCESmoothingEffectType)smoothingEffectType
+{
+    [self.rendererState setSmoothingEffectType:smoothingEffectType];
+}
+
+- (ALYCESmoothingEffectType)smoothingEffectType
+{
+    return [self.rendererState getSmoothingEffectType];
+}
+
+- (void)setCurrentTime:(NSTimeInterval)currentTime
+{
+    [self.rendererState setCurrentTime:(float)currentTime];
+}
+
+- (NSTimeInterval)currentTime
+{
+    return (NSTimeInterval)[self.rendererState getCurrentTime];
+}
+
+- (void)setRenderOnlyColorFilter:(BOOL)renderOnlyColorFilter
+{
+    [self.rendererState setRenderOnlyColorFilter:renderOnlyColorFilter];
+}
+
+- (BOOL)renderOnlyColorFilter
+{
+    return [self.rendererState getRenderOnlyColorFilter];
+}
+
+- (void)clearTimedLayouts
+{
+    [self.rendererState clearTimedLayouts];
+}
+
+- (void)setupLoopingTimedLayouts
+{
+    [self.rendererState setupLoopingTimedLayouts];
+}
+
+- (void)convertAllLayoutsToDuet
+{
+    [self.rendererState convertAllLayoutsToDuet];
+}
+
+- (void)addTimedLayout:(ALYCETimedLayoutType)type duration:(NSTimeInterval)duration
+{
+    [self.rendererState addTimedLayout:type duration:duration];
+}
+
+- (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha
+{
+    [self.renderer runSmoothingEffectAnimation:animationDuration particleAlpha:particleAlpha];
 }
 
 #pragma mark - GPUImageInput
@@ -110,6 +231,13 @@
         // TODO: Sometimes the framebuffer we get back from the cache is actually 360x360 when we request a 360x480.
         // Investigate why that is the case...
         
+        // Update vocals intensity using a low-pass filter.
+        float newVocalsIntensitySample = [self boostRMS:self.currentRMSBlock ? self.currentRMSBlock() : 0.0f];
+        float oldVocalsIntensity = [self.rendererState getVocalsIntensity];
+        float newVocalsIntensity = oldVocalsIntensity + 0.3f * (newVocalsIntensitySample - oldVocalsIntensity);
+        [self.rendererState setVocalsIntensity:newVocalsIntensity];
+        
+        // Configure render output framebuffer
         CGSize outputSize = [self sizeOfFBO];
         outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:outputSize textureOptions:self.outputTextureOptions onlyTexture:NO];
         [outputFramebuffer activateFramebuffer];
@@ -139,6 +267,7 @@
                                                                       flipVertically:YES
                                                                     flipHorizontally:NO];
         
+        // Render time!
         [self.renderer render:self.dummyAssetManager
                         state:self.rendererState
                        input1:input1
@@ -317,11 +446,6 @@
 - (BOOL)wantsMonochromeInput
 {
     return NO;
-}
-
-- (void)resetForLivePreview
-{
-    self.hasSetSecondTexture = NO;
 }
 
 #pragma mark - Still image processing
