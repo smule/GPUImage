@@ -9,7 +9,8 @@
 #import <Foundation/Foundation.h>
 #import "GPUImage.h"
 #import <AVFoundation/AVFoundation.h>
-#import "GPUImageFilterGallery.h"
+
+#import "GPUImageALYCEFilter.h"
 
 static const CGFloat kDefaultGammaAdjustment = 1.0f;
 static const CGFloat kDefaultSaturationAdjustment = 1.0f;
@@ -22,13 +23,11 @@ static const CGFloat kDefaultSaturationAdjustment = 1.0f;
 @property (nonatomic) CGFloat saturationAdjustment;
 @property (nonatomic, readonly) BOOL hasSetPlayerItem;
 
+@property (nonatomic, strong) GPUImageALYCEFilter *alyceFilter;
+
 - (void)setLocalVideoPlayerItem:(AVPlayerItem *)localVideoPlayerItem;
 - (void)setDuetSeedPlayerItem:(AVPlayerItem *)duetSeedPlayerItem;
 - (void)setFilterView:(GPUImageView *)filterView;
-
-- (void)setVideoStyle:(ALYCEVideoStyle)videoStyle
-          colorFilter:(ALYCEColorFilter)colorFilter
-   airbrushFilterType:(AirbrushFilterType)airbrushFilterType;
 
 - (void)startProcessing;
 - (void)pauseProcessing;

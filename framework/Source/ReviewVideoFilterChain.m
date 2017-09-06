@@ -7,6 +7,7 @@
 //
 
 #import "ReviewVideoFilterChain.h"
+#import "GPUImageALYCEFilter.h"
 
 @interface ReviewVideoFilterChain ()
 
@@ -30,6 +31,8 @@
     {
         self.gammaAdjustment = kDefaultGammaAdjustment;
         self.saturationAdjustment = kDefaultSaturationAdjustment;
+        self.alyceFilter = [[GPUImageALYCEFilter alloc] init];
+        self.alyceFilter.currentTime = 0.0;
     }
     
     return self;
@@ -102,8 +105,7 @@
 
 - (void)updateChain:(BOOL)userIsLeft
 {
-    
-    if ( ![[self.localFilterMovie targets] containsObject:[GPUImageFilterGallery sharedInstance]])
+    if (![[self.localFilterMovie targets] containsObject:self.alyceFilter])
     {
         [self unchainGPUImageMovieFromFilterView];
         [self chainGPUImageMovieToFilterView:userIsLeft];
@@ -146,26 +148,26 @@
     
     if (self.duetSeedFilterMovie && self.localFilterMovie)
     {
-        [GPUImageFilterGallery sharedInstance].inputCount = 2;
         if (userIsLeft)
         {
-            [prevFilter addTarget:[GPUImageFilterGallery sharedInstance] atTextureLocation:0];
-            [self.duetSeedFilterMovie addTarget:[GPUImageFilterGallery sharedInstance] atTextureLocation:1];
-            [[GPUImageFilterGallery sharedInstance] setUserInputIndex:0];
+            [prevFilter addTarget:self.alyceFilter atTextureLocation:0];
+            [self.duetSeedFilterMovie addTarget:self.alyceFilter atTextureLocation:1];
+            self.alyceFilter.userInputIndex = 0;
+            [self.alyceFilter setUserInputIndex:0];
         }
         else
         {
-            [self.duetSeedFilterMovie addTarget:[GPUImageFilterGallery sharedInstance] atTextureLocation:0];
-            [prevFilter addTarget:[GPUImageFilterGallery sharedInstance] atTextureLocation:1];
-            [[GPUImageFilterGallery sharedInstance] setUserInputIndex:1];
+            [self.duetSeedFilterMovie addTarget:self.alyceFilter atTextureLocation:0];
+            [prevFilter addTarget:self.alyceFilter atTextureLocation:1];
+            self.alyceFilter.userInputIndex = 1;
         }
     }
     else
     {
-        [prevFilter addTarget:[GPUImageFilterGallery sharedInstance]];
+        [prevFilter addTarget:self.alyceFilter];
     }
     
-    [[GPUImageFilterGallery sharedInstance] addTarget:_filterView];
+    [self.alyceFilter addTarget:_filterView];
 }
 
 - (void)unchainGPUImageMovieFromFilterView
@@ -187,16 +189,7 @@
         [_saturationFilter removeAllTargets];
     }
     
-    [[GPUImageFilterGallery sharedInstance] removeAllTargets];
-}
-
-- (void)setVideoStyle:(ALYCEVideoStyle)videoStyle
-          colorFilter:(ALYCEColorFilter)colorFilter
-   airbrushFilterType:(AirbrushFilterType)airbrushFilterType
-{
-    [GPUImageFilterGallery sharedInstance].videoStyle = videoStyle;
-    [GPUImageFilterGallery sharedInstance].colorFilter = colorFilter;
-    [GPUImageFilterGallery sharedInstance].airbrushFilterType = airbrushFilterType;
+    [self.alyceFilter removeAllTargets];
 }
 
 @end
