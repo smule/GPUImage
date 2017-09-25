@@ -146,6 +146,16 @@
     return [self.rendererState getSmoothingEffectType];
 }
 
+- (void)setParticleIntensity:(ALYCEParticleIntensity)particleIntensity
+{
+    [self.rendererState setParticleIntensity:particleIntensity];
+}
+
+- (ALYCEParticleIntensity)particleIntensity
+{
+    return [self.rendererState getParticleIntensity];
+}
+
 - (void)setCurrentTime:(NSTimeInterval)currentTime
 {
     [self.rendererState setCurrentTime:(float)currentTime];

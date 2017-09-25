@@ -13,6 +13,7 @@
 @property (nonatomic) ALYCEVideoStyle videoStyle;
 @property (nonatomic) ALYCEColorFilter colorFilter;
 @property (nonatomic) ALYCESmoothingEffectType smoothingEffectType;
+@property (nonatomic) ALYCEParticleIntensity particleIntensity;
 @property (nonatomic) NSTimeInterval currentTime;
 @property (nonatomic) BOOL renderOnlyColorFilter;
 
