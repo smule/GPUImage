@@ -29,7 +29,7 @@
 
 - (void)convertAllLayoutsToDuet;
 
-- (void)setupLoopingTimedLayouts;
+- (void)setupLoopingTimedLayouts:(BOOL)duetLayouts;
 
 - (void)addTimedLayout:(ALYCETimedLayoutType)type duration:(NSTimeInterval)duration;
 

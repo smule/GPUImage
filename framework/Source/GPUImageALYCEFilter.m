@@ -181,9 +181,9 @@
     [self.rendererState clearTimedLayouts];
 }
 
-- (void)setupLoopingTimedLayouts
+- (void)setupLoopingTimedLayouts:(BOOL)duetLayouts
 {
-    [self.rendererState setupLoopingTimedLayouts];
+    [self.rendererState setupLoopingTimedLayouts:duetLayouts];
 }
 
 - (void)convertAllLayoutsToDuet
