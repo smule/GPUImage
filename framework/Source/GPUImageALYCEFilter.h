@@ -21,7 +21,7 @@
  * Should be set to provide the filter with the current vocals RMS.
  * This is used to make video effects response to the vocals input of the user in real-time.
  */
-@property (nonatomic, copy) float (^currentRMSBlock)();
+@property (nonatomic, copy) float (^currentRMSBlock)(void);
 
 - (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha;
 
