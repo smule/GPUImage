@@ -198,7 +198,7 @@
 
 - (void)runSmoothingEffectAnimationWithDuration:(NSTimeInterval)animationDuration particleAlpha:(float)particleAlpha
 {
-    [self.renderer runSmoothingEffectAnimation:animationDuration particleAlpha:particleAlpha];
+    [self.rendererState setPendingSmoothingEffectAnimation:animationDuration particleAlpha:particleAlpha];
 }
 
 #pragma mark - GPUImageInput
