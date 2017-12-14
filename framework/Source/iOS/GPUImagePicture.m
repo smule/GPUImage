@@ -254,7 +254,7 @@
         return NO;
     }
     
-    runAsynchronouslyOnVideoProcessingQueue(^{        
+    runSynchronouslyOnVideoProcessingQueue(^{
         for (id<GPUImageInput> currentTarget in targets)
         {
             NSInteger indexOfObject = [targets indexOfObject:currentTarget];

@@ -190,12 +190,10 @@ NSString *const kGPUImagePassthroughFragmentShaderString = SHADER_STRING
         return NULL;
     }
 
-    GPUImageFramebuffer* framebuffer = [self framebufferForOutput];
-    
+    CGImageRef image = [[self framebufferForOutput] newCGImageFromFramebufferContents];
     usingNextFrameForImageCapture = NO;
     dispatch_semaphore_signal(imageCaptureSemaphore);
     
-    CGImageRef image = [framebuffer newCGImageFromFramebufferContents];
     return image;
 }
 
