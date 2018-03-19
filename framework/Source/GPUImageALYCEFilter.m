@@ -482,12 +482,10 @@
         return NULL;
     }
     
-    GPUImageFramebuffer* framebuffer = [self framebufferForOutput];
-    
+    CGImageRef image = [[self framebufferForOutput] newCGImageFromFramebufferContents];
     usingNextFrameForImageCapture = NO;
     dispatch_semaphore_signal(_imageCaptureSemaphore);
     
-    CGImageRef image = [framebuffer newCGImageFromFramebufferContents];
     return image;
 }
 
