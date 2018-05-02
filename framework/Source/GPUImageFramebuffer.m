@@ -4,6 +4,7 @@
 @interface GPUImageFramebuffer()
 {
     GLuint framebuffer;
+    GLuint __padding[7];
 #if TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE
     CVPixelBufferRef renderTarget;
     CVOpenGLESTextureRef renderTexture;
@@ -333,6 +334,7 @@ void dataProviderUnlockCallback (void *info, const void *data, size_t size)
             NSUInteger paddedBytesForImage = paddedWidthOfImage * (int)_size.height * 4;
             
             glFinish();
+            // this is getting called with NULL it is a PixelBuffer reference
             CFRetain(renderTarget); // I need to retain the pixel buffer here and release in the data source callback to prevent its bytes from being prematurely deallocated during a photo write operation
             [self lockForReading];
             rawImagePixels = (GLubyte *)CVPixelBufferGetBaseAddress(renderTarget);
