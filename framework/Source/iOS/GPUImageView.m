@@ -391,9 +391,20 @@
         
         glVertexAttribPointer(displayPositionAttribute, 2, GL_FLOAT, 0, 0, imageVertices);
         glVertexAttribPointer(displayTextureCoordinateAttribute, 2, GL_FLOAT, 0, 0, [GPUImageView textureCoordinatesForRotation:inputRotation]);
-        
+
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
+        // This glFinish() call fixes SI-21525.
+        // It seems like in iOS 12 something changed with how opengl contexts present renderbuffers.
+        // They might not flush/finish gl work before presenting it.
+        // Or maybe when we start processing the next frame to render and the old frame is still in the process of being presented.
+        // Calling glFinish() forces OpenGL to synchronously finish any pending work.
+        // This can have performance-implications, but I haven't seen any such problems during my testing.
+        if (@available(iOS 12, *))
+        {
+            glFinish();
+        }
+
         [self presentFramebuffer];
         [inputFramebufferForDisplay unlock];
         inputFramebufferForDisplay = nil;
